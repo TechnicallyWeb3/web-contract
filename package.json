@@ -1,0 +1,33 @@
+{
+  "name": "web-contract",
+  "version": "0.0.4",
+  "description": "solidity front end contract",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TechnicallyWeb3/web-contract.git"
+  },
+  "keywords": [
+    "solidity",
+    "smart",
+    "contract",
+    "web3",
+    "website"
+  ],
+  "author": "Technically Web3",
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/TechnicallyWeb3/web-contract/issues"
+  },
+  "homepage": "https://github.com/TechnicallyWeb3/web-contract#readme",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.10"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  }
+}
