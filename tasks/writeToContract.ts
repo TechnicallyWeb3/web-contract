@@ -59,26 +59,40 @@ task("write-to-contract", "Write files to the smart contract")
           content = ipfsUrl;
         }
 
+        async function writeChunks(content: string) {
+          const chunkSize = 24 * 1024; // 24KB chunks
+          let transactionHash: string = '';
+          let contentChanged = false;
+
+          for (let i = 0; i < content.length; i += chunkSize) {
+            const chunk = content.slice(i, i + chunkSize);
+            const existingChunk = await websiteContract.getResourceChunk(relativePath, i / chunkSize);
+
+            console.log(existingChunk);
+
+            if (chunk !== existingChunk[0]) {
+              const tx = await websiteContract.setResourceChunk(relativePath, chunk, contentType);
+              await tx.wait();
+              transactionHash = tx.hash;
+              contentChanged = true;
+              console.log(`Chunk ${Math.floor(i / chunkSize) + 1} of ${Math.ceil(content.length / chunkSize)} updated for ${relativePath}`);
+            } else {
+              console.log(`Chunk ${Math.floor(i / chunkSize) + 1} of ${Math.ceil(content.length / chunkSize)} unchanged for ${relativePath}`);
+            }
+          }
+
+          return { transactionHash, contentChanged };
+        }
+
         // Proceed with writing to the contract (either modified content or IPFS URL)
-        const chunkSize = 24 * 1024; // 24KB chunks
-        let transactionHash: string = '';
+        const { transactionHash, contentChanged } = await writeChunks(content);
 
-        // Remove existing resource if force flag is set
-        if (action === 'force') {
-          await websiteContract.removeResource(relativePath);
-          console.log(`Removed existing resource: ${relativePath}`);
+        if (contentChanged) {
+          manifest.contractFiles[transactionHash] = relativePath;
+          console.log(`File ${relativePath} updated in contract. Transaction hash: ${transactionHash}`);
+        } else {
+          console.log(`File ${relativePath} unchanged. No updates needed.`);
         }
-
-        for (let i = 0; i < content.length; i += chunkSize) {
-          const chunk = content.slice(i, i + chunkSize);
-          const tx = await websiteContract.setResourceChunk(relativePath, chunk, contentType);
-          await tx.wait();
-          transactionHash = tx.hash;
-          console.log(`Chunk ${Math.floor(i / chunkSize) + 1} of ${Math.ceil(content.length / chunkSize)} uploaded for ${relativePath}`);
-        }
-
-        manifest.contractFiles[transactionHash] = relativePath;
-        console.log(`File ${relativePath} written to contract. Transaction hash: ${transactionHash}`);
       }
     }
 
