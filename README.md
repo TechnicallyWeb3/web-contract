@@ -10,24 +10,27 @@ This project includes several Hardhat tasks to help you deploy, manage, and inte
 To deploy the WebContract or use an existing deployment:
 
 ```bash
-npx hardhat deploy-contract [action]
+npx hardhat deploy-contract [action] --network <network-name>
 ```
 - `[action]`: Optional. Use 'redeploy' to force redeployment.
+- `--network`: Optional. The network to deploy to, if not specified, the hardhat VM network will be used.
 
 ### Upload to IPFS
 
 To upload large and unsupported assets to IPFS:
 
 ```bash
-npx hardhat upload-ipfs-assets [action]
+npx hardhat upload-ipfs-assets [action] --network <network-name>
 ```
 - `[action]`: Optional. Use 'force' to force reupload.
+- `--network`: Optional. The network to upload to, if not specified, the hardhat VM network will be used.
 
 ### Write to Contract
 
 To write files to the smart contract:
 
 ```bash
-npx hardhat write-to-contract [action]
+npx hardhat write-to-contract [action] --network <network-name>
 ```
 - `[action]`: Optional. Use 'force' to force rewrite.
+- `--network`: Optional. The network to write to, if not specified, the hardhat VM network will be used.
