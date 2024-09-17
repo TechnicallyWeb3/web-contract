@@ -5,6 +5,13 @@ A package to deploy your react app as a smart contract for use with a web3 brows
 
 This project includes several Hardhat tasks to help you deploy, manage, and interact with your smart contract. Here's how to use them:
 
+## Build Folder
+To build your react app you'll need to open your project in a new terminal window and run:
+```bash
+npm run build
+```
+This will create a build folder with the react app's code, which you will need to copy into the build folder of this project.
+
 ### Deploy Contract
 
 To deploy the WebContract or use an existing deployment:
