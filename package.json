@@ -28,6 +28,10 @@
     "hardhat": "^2.22.10"
   },
   "dependencies": {
-    "dotenv": "^16.4.5"
-  }
+    "@openzeppelin/contracts": "^5.0.2",
+    "@pinata/sdk": "^2.1.0",
+    "dotenv": "^16.4.5",
+    "ipfs-http-client": "^60.0.1"
+  },
+  "contract": "0x9F1faB94c79D4eEE77fB509E4e2dA2aD4Eeb7078"
 }

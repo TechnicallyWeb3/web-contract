@@ -39,12 +39,68 @@ async function processFile(filePath: string, relativePath: string) {
 
     console.log("Updating contract...");
 
-    // Determine content type (you might want to expand this logic)
-    const contentType = path.extname(filePath).slice(1);
+    // Determine content type based on file extension
+    let contentType: string;
+    switch (path.extname(filePath).toLowerCase()) {
+      case '.html':
+        contentType = 'text/html';
+        break;
+      case '.css':
+        contentType = 'text/css';
+        break;
+      case '.js':
+        contentType = 'application/javascript';
+        break;
+      case '.json':
+        contentType = 'application/json';
+        break;
+      case '.png':
+        contentType = 'image/png';
+        break;
+      case '.jpg':
+      case '.jpeg':
+        contentType = 'image/jpeg';
+        break;
+      case '.gif':
+        contentType = 'image/gif';
+        break;
+      case '.svg':
+        contentType = 'image/svg+xml';
+        break;
+      case '.xml':
+        contentType = 'application/xml';
+        break;
+      case '.pdf':
+        contentType = 'application/pdf';
+        break;
+      case '.map':
+        contentType = 'application/json';
+        break;
+      case '.ico':
+        contentType = 'image/x-icon';
+        break;
+      case '.txt':
+        contentType = 'text/plain';
+        break;
+      default:
+        contentType = 'application/octet-stream';
+    }
 
     // Update the file in the contract
-    const tx = await webContract.setFile(relativePath, contentType, localContent);
-    await tx.wait();
+    const chunkSize = 40 * 1024; // 40KB
+    for (let i = 0; i < localContent.length; i += chunkSize) {
+      const chunk = localContent.slice(i, i + chunkSize);
+      let tx;
+      if (i === 0) {
+        // For the first chunk, use setFile to initialize the file
+        tx = await webContract.setFile(relativePath, contentType, chunk);
+      } else {
+        // For subsequent chunks, use addToFile to append content
+        tx = await webContract.addToFile(relativePath, chunk);
+      }
+      await tx.wait();
+      console.log(`Chunk ${Math.floor(i / chunkSize) + 1} of ${Math.ceil(localContent.length / chunkSize)} uploaded for ${relativePath}`);
+    }
 
     console.log(`File ${relativePath} updated in the contract.`);
   }

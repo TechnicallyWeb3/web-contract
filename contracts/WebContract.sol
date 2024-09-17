@@ -3,7 +3,7 @@ pragma solidity ^0.8.20 < 0.9.0;
 
 // Uncomment this line to use console.log
 import "hardhat/console.sol";
-import "@openzeppelin/contracts/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract WebContract is Ownable {
 
@@ -16,15 +16,18 @@ contract WebContract is Ownable {
 
     mapping ( string path => WebFile) private file;
 
-    function setFile(string path, string contentType, string content) public onlyOwner {
+    // used to create, update or delete a file
+    function setFile(string calldata path, string calldata contentType, string calldata content) external onlyOwner {
         file[path] = WebFile(contentType, content);
     }
 
-    function addToFile(string path, string calldata content) public onlyOwner {
+    // used to append content to a file when chunking is required
+    function addToFile(string calldata path, string calldata content) external onlyOwner {
         file[path].content = string.concat(file[path].content, content);
     }
 
-    function getFile(string path) public view returns (WebFile) {
+    // used to get a complete file
+    function getFile(string calldata path) external view returns (WebFile memory) {
         return file[path];
     }
 

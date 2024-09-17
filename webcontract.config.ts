@@ -1,29 +1,31 @@
-type AssetType = '.png' | '.jpg' | '.gif' | '.svg' | '.json' | string;
+type AssetType = '.png' | '.jpg' | '.gif' | '.svg' | '.json' | '.html' | '.htm' | '.css' | '.js' | '.xml' | '.txt' | string;
 
 interface PinataConfig {
-  apiKey: string;
-  apiSecret: string;
-  gateway: string;
+    apiKey: string;
+    apiSecret: string;
+    gateway: string;
 }
 
 interface WebContractConfig {
-  deployedContractAddress?: string;
-  buildFolder: string;
-  assetTypes?: AssetType[];
-  assetLimit?: number;
-  pinata?: PinataConfig;
+    buildFolder: string;
+    fileTypes?: AssetType[];
+    assetLimit?: number;
+    deployChain?: string;
+    pinata?: PinataConfig;
+    ipfsPath?: string;
 }
 
 const config: WebContractConfig = {
-  deployedContractAddress: '0x1234567890123456789012345678901234567890', // Replace with actual address
-  buildFolder: './build',
-  assetTypes: ['.png', '.jpg', '.gif', '.svg', '.json'], // Optional: list of asset types to store on IPFS
-  assetLimit: 5 * 1024 * 1024, // Optional: 5MB limit for assets to store on IPFS
-  pinata: {
-    apiKey: process.env.PINATA_API_KEY || '',
-    apiSecret: process.env.PINATA_API_SECRET || '',
-    gateway: process.env.PINATA_GATEWAY || '',
-  }
+    buildFolder: './build',
+    fileTypes: ['.html', '.htm', '.css', '.js', '.xml', '.txt'],
+    assetLimit: 5 * 1024 * 1024, // 5 MB
+    deployChain: 'sepolia',
+    pinata: {
+        apiKey: process.env.PINATA_API_KEY || '',
+        apiSecret: process.env.PINATA_API_SECRET || '',
+        gateway: process.env.PINATA_GATEWAY || ''
+    },
+    ipfsPath: 'https://emerald-academic-heron-105.mypinata.cloud/ipfs/{cid}'
 };
 
 export default config;

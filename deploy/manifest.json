@@ -1,0 +1,15 @@
+{
+  "ipfsFiles": {
+    "logo.png": "Qme4jpETgfmYcXUzrPGsttg31EuLecGkWLoHvKkkL8uMR1"
+  },
+  "contractFiles": {
+    "0x475ff73d1b51ef2240ed781ee915b4b6140f0ce8341df004e47bf49c02340734": "index.html",
+    "0x5092da8dd719ba3bb106910b8575365b695624a3d08571be16734277230830d7": "styles.css",
+    "0x5655489f23d28c519780190d8211f43c4274d85ccaed1a0ea2515fb33679a306": "index.html",
+    "0xbf90684889fe29ced7d45793b43906183b78f2dcacb5e0078aa738eb40e3886b": "styles.css",
+    "0x587e87a623dab8ab687a0942d7ba4412260bacb186c3b0a19872d2d8bebe3dc1": "index.html",
+    "0x977f2612213457c8254d1759fa1b86f1243bd30a901538324cd2b3369b7b469b": "styles.css",
+    "0x6244f2b366630c0beb28d2fa8260cc5a83855535193401ad9f6c9eb1daa9cbc1": "index.html",
+    "0x2903328be7d1962ed94cd8ce17da4a6916bbfdfcc93e804b229c6a94e9ed6be4": "styles.css"
+  }
+}
