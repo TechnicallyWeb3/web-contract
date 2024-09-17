@@ -34,17 +34,25 @@ task("write-to-contract", "Write files to the smart contract")
       const relativePath = path.relative(buildFolder, filePath);
       const fileExtension = path.extname(filePath).toLowerCase();
 
-      if (!manifest.ipfsFiles[relativePath] && config.fileTypes.includes(fileExtension)) {
+      if (!manifest.ipfsFiles[relativePath]) {
         console.log(`Processing ${relativePath}...`);
+        console.log(`Reading file: ${filePath}`);
         let content = await fs.readFile(filePath, 'utf8');
+        console.log(`File content length: ${content.length} characters`);
+
         const contentType = getContentType(fileExtension);
+        console.log(`Determined content type: ${contentType}`);
 
         // Check if any files are in the IPFS manifest
         const ipfsFiles = Object.entries(manifest.ipfsFiles);
+        console.log(`Number of IPFS files in manifest: ${ipfsFiles.length}`);
+
         for (const [ipfsPath, ipfsHash] of ipfsFiles) {
+          console.log(`Processing IPFS file: ${ipfsPath}`);
           const ipfsUrl = config.ipfsPath.replace('{cid}', ipfsHash);
+          // console.log(`Generated IPFS URL: ${ipfsUrl}`);
           const regex = new RegExp(ipfsPath, 'g');
-          
+          // console.log(`Created regex: ${regex}`);
           if (content.match(regex)) {
             console.log(`Found reference to ${ipfsPath} in ${relativePath}. Replacing with IPFS URL: ${ipfsUrl}`);
             content = content.replace(regex, ipfsUrl);
@@ -56,20 +64,37 @@ task("write-to-contract", "Write files to the smart contract")
           const ipfsHash = manifest.ipfsFiles[relativePath];
           const ipfsUrl = config.ipfsPath.replace('{cid}', ipfsHash);
           console.log(`File ${relativePath} is on IPFS. Using IPFS URL: ${ipfsUrl}`);
+          // console.log(`Original content length: ${content.length}`);
           content = ipfsUrl;
+          // console.log(`New content (IPFS URL): ${content}`);
+        } else {
+          console.log(`File ${relativePath} is not on IPFS. Using original content.`);
         }
 
         async function writeChunks(content: string) {
+          // console.log(`Starting writeChunks for ${relativePath}`);
           const chunkSize = 24 * 1024; // 24KB chunks
+          console.log(`Chunk size: ${chunkSize} bytes`);
           let transactionHash: string = '';
           let contentChanged = false;
 
+          console.log(`Total content length: ${content.length}`);
+          console.log(`Number of chunks: ${Math.ceil(content.length / chunkSize)}`);
+
           for (let i = 0; i < content.length; i += chunkSize) {
+            console.log(`Processing chunk ${Math.floor(i / chunkSize) + 1}`);
             const chunk = content.slice(i, i + chunkSize);
-            const existingChunk = await websiteContract.getResourceChunk(relativePath, i / chunkSize);
+            console.log(`Read chunk: ${i / chunkSize} @ ${relativePath}`);
+            let existingChunk: [string, string] = ['', ''];
+            try {
+              existingChunk = await websiteContract.getResourceChunk(relativePath, i / chunkSize);
+            } catch (error) {
+              // If the chunk doesn't exist, we'll use an empty chunk
+              console.log(`Chunk ${Math.floor(i / chunkSize) + 1} doesn't exist yet. Creating new chunk.`);
+            }
+            console.log(`Existing chunk:`, existingChunk);
 
-            console.log(existingChunk);
-
+            console.log(`Comparing new chunk with existing chunk...`);
             if (chunk !== existingChunk[0]) {
               const tx = await websiteContract.setResourceChunk(relativePath, chunk, contentType);
               await tx.wait();

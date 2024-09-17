@@ -24,7 +24,6 @@ contract WebsiteContract {
     }
 
     function getResourceChunk(string memory path, uint256 index) public view returns (string memory, string memory) {
-        require(index < resourceChunks[path].length, "Chunk does not exist");
         ResourceChunk memory chunk = resourceChunks[path][index];
         return (chunk.content, chunk.contentType);
     }
