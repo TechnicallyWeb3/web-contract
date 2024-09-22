@@ -22,7 +22,7 @@ abstract contract WebContractV5 is Ownable {
 
     uint256 public immutable MAJOR_VERSION = 0;
     uint256 public immutable MINOR_VERSION = 5;
-    uint256 public immutable PATCH_VERSION = 0;
+    uint256 public immutable PATCH_VERSION = 3;
 
     /// @notice Returns the current version of the web contract
     /// @return Version struct containing major, minor, and patch versions
@@ -30,12 +30,45 @@ abstract contract WebContractV5 is Ownable {
         return Version(MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION);
     }
 
+    /// @notice The chain ID for the browser to redirect to, if set
+    uint256 private redirectChainId;
+
+    /// @notice Gets the redirect chain ID
+    /// @return The chain ID to redirect to
+    function getRedirectChainId() public view virtual returns (uint256) {
+        return redirectChainId;
+    }
+
+    /// @notice Sets the redirect chain ID
+    /// @param _chainId The chain ID to redirect to
+    /// @dev Can only be called by the contract owner
+    function setRedirectChainId(uint256 _chainId) public virtual onlyOwner {
+        redirectChainId = _chainId;
+    }
+
+    /// @notice The IPFS hash for the browser to redirect to, if set
+    string private redirectIPFSHash;
+
+    /// @notice Gets the redirect IPFS hash
+    /// @return The IPFS hash to redirect to
+    function getRedirectIPFSHash() public view virtual returns (string memory) {
+        return redirectIPFSHash;
+    }
+
+    /// @notice Sets the redirect IPFS hash
+    /// @param _hash The IPFS hash to redirect to
+    /// @dev Can only be called by the contract owner
+    function setRedirectIPFSHash(string memory _hash) public virtual onlyOwner {
+        redirectIPFSHash = _hash;
+    }
+
+    /// @notice Whether the contract is locked or immutable
     bool private isLocked;
     bool private isImmutable;
 
     /// @notice Checks if the contract is currently locked
     /// @return bool indicating whether the contract is locked
-    function isLocked() public view virtual returns (bool) {
+    function isLocked() public view returns (bool) {
         return isLocked;
     }
 
@@ -47,19 +80,19 @@ abstract contract WebContractV5 is Ownable {
 
     /// @notice Locks the contract, preventing certain operations
     /// @dev Can only be called by the owner when the contract is not locked
-    function lockContract() external virtual notLocked onlyOwner {
+    function lockContract() public virtual notLocked onlyOwner {
         isLocked = true;
     }
 
     /// @notice Unlocks the contract
     /// @dev Can only be called by the owner
-    function unlockContract() external virtual onlyOwner {
+    function unlockContract() public virtual onlyOwner {
         isLocked = false;
     }
 
     /// @notice Makes the contract immutable, permanently locking it
     /// @dev Can only be called by the owner
-    function makeImmutable() external virtual onlyOwner {
+    function makeImmutable() public virtual onlyOwner {
         isImmutable = true;
     }
 
@@ -74,6 +107,8 @@ abstract contract WebContractV5 is Ownable {
     /// @notice Adds a new admin
     /// @param _admin Address of the new admin
     /// @dev Can only be called by the owner
+    /// @dev SECURITY WARNING: Overriding this function may break access control.
+    ///      Ensure any override maintains the intended admin addition logic.
     function addAdmin(address _admin) public virtual onlyOwner {
         admins[_admin] = true;
     }
@@ -81,6 +116,8 @@ abstract contract WebContractV5 is Ownable {
     /// @notice Removes an admin
     /// @param _admin Address of the admin to remove
     /// @dev Can only be called by the owner
+    /// @dev SECURITY WARNING: Overriding this function may break access control.
+    ///      Ensure any override maintains the intended admin removal logic.
     function removeAdmin(address _admin) public virtual onlyOwner {
         admins[_admin] = false;
     }
@@ -88,6 +125,8 @@ abstract contract WebContractV5 is Ownable {
     /// @notice Checks if an address is an admin
     /// @param _admin Address to check
     /// @return bool indicating whether the address is an admin
+    /// @dev SECURITY WARNING: Overriding this function may break access control.
+    ///      Ensure any override maintains the intended admin verification logic.
     function isAdmin(address _admin) public view virtual returns (bool) {
         return _admin == owner() || admins[_admin];
     }
