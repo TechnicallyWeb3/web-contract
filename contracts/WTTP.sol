@@ -345,6 +345,7 @@ contract Web3TransferProtocol is Ownable {
 
         // Ensure the chunks array is large enough
         if (_chunkIndex >= file.chunks.length) {
+            require(_chunkIndex == file.chunks.length, "Chunk index out of bounds");
             file.chunks.push(_content);
         } else {
             // Only update if content is different
