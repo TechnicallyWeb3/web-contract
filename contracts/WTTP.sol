@@ -6,21 +6,17 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Web3TransferProtocol is Ownable {
     // Function to encode string array to bytes
-    function encodeStringArray(string[] memory arr)
-        internal
-        pure
-        returns (bytes memory)
-    {
+    function encodeStringArray(
+        string[] memory arr
+    ) internal pure returns (bytes memory) {
         bytes memory encoded = abi.encode(arr);
         return encoded;
     }
 
     // Function to decode bytes back to string array
-    function decodeStringArray(bytes memory encoded)
-        internal
-        pure
-        returns (string[] memory)
-    {
+    function decodeStringArray(
+        bytes memory encoded
+    ) internal pure returns (string[] memory) {
         string[] memory arr = abi.decode(encoded, (string[]));
         return arr;
     }
@@ -73,16 +69,19 @@ contract Web3TransferProtocol is Ownable {
     }
 
     bool public isLocked;
+
     function lockFS() external onlyOwner {
         isLocked = true;
     }
 
     uint256 public redirectChainId;
+
     function setRedirectChainId(uint256 _chainId) external onlyOwner {
         redirectChainId = _chainId;
     }
 
     string public redirectIPFSHash;
+
     function setRedirectIPFSHash(string memory _hash) external onlyOwner {
         redirectIPFSHash = _hash;
     }
@@ -119,14 +118,14 @@ contract Web3TransferProtocol is Ownable {
         permissionLevels[_groupId] = group;
     }
 
-    function setUserPermissionLevel(address _user, uint8 _permissionLevel) public onlyOwner {
+    function setUserPermissionLevel(
+        address _user,
+        uint8 _permissionLevel
+    ) public onlyOwner {
         userPermissions[_user] = _permissionLevel;
     }
 
-    modifier writePermissions(
-        string[] memory _path,
-        string memory _fileName
-    ) {
+    modifier writePermissions(string[] memory _path, string memory _fileName) {
         require(!isLocked, "File system is locked");
         bytes memory path = encodeStringArray(_path);
         uint8 _userPermissionLevel = userPermissions[msg.sender];
@@ -149,10 +148,7 @@ contract Web3TransferProtocol is Ownable {
         _;
     }
 
-    modifier readPermissions(
-        string[] memory _path,
-        string memory _fileName
-    ) {
+    modifier readPermissions(string[] memory _path, string memory _fileName) {
         bytes memory path = encodeStringArray(_path);
         uint8 _userPermissionLevel = userPermissions[msg.sender];
         Permission memory _userPermissions;
@@ -191,15 +187,16 @@ contract Web3TransferProtocol is Ownable {
                 keccak256(abi.encodePacked("/")),
             "Path must start with /"
         );
-        require(directories[encodeStringArray(_path)].created != 0, "Path does not exist");
+        require(
+            directories[encodeStringArray(_path)].created != 0,
+            "Path does not exist"
+        );
         _;
     }
 
-    function getParentPath(string[] calldata _path)
-        internal
-        pure
-        returns (string[] memory)
-    {
+    function getParentPath(
+        string[] calldata _path
+    ) internal pure returns (string[] memory) {
         require(_path.length > 1, "Path has no parent");
         string[] memory parentPath = new string[](_path.length - 1);
         for (uint256 i = 0; i < _path.length - 1; i++) {
@@ -212,7 +209,9 @@ contract Web3TransferProtocol is Ownable {
     mapping(bytes => mapping(uint256 => Permission)) private dirPermissions;
 
     // Function to list contents of a directory
-    function ls(string[] calldata _path)
+    function ls(
+        string[] calldata _path
+    )
         external
         view
         validPath(_path)
@@ -223,11 +222,9 @@ contract Web3TransferProtocol is Ownable {
     }
 
     // Function to create a new directory
-    function mkdir(string[] calldata _path)
-        external
-        validPath(getParentPath(_path))
-        writePermissions(_path, "")
-    {
+    function mkdir(
+        string[] calldata _path
+    ) external validPath(getParentPath(_path)) writePermissions(_path, "") {
         bytes memory path = encodeStringArray(_path);
         require(directories[path].created == 0, "Directory already exists");
         directories[path] = Directory({
@@ -237,15 +234,15 @@ contract Web3TransferProtocol is Ownable {
             customPermissions: false
         });
 
-        directories[encodeStringArray(getParentPath(_path))].directories.push(_path[_path.length - 1]);
+        directories[encodeStringArray(getParentPath(_path))].directories.push(
+            _path[_path.length - 1]
+        );
     }
 
     // Function to remove a directory
-    function rmdir(string[] calldata _path)
-        public
-        validPath(_path)
-        writePermissions(getParentPath(_path), "")
-    {
+    function rmdir(
+        string[] calldata _path
+    ) public validPath(_path) writePermissions(getParentPath(_path), "") {
         bytes memory path = encodeStringArray(_path);
         delete directories[path];
         // cannot delete permissions, be cautious when recreating a directory with the same path
@@ -296,11 +293,10 @@ contract Web3TransferProtocol is Ownable {
     // }
 
     // Function to create a new file
-    function touch(string[] calldata _path, string calldata _fileName)
-        public
-        validPath(_path)
-        writePermissions(_path, _fileName)
-    {
+    function touch(
+        string[] calldata _path,
+        string calldata _fileName
+    ) public validPath(_path) writePermissions(_path, _fileName) {
         bytes memory path = encodeStringArray(_path);
         if (files[path][_fileName].created == 0) {
             files[path][_fileName] = File({
@@ -318,11 +314,10 @@ contract Web3TransferProtocol is Ownable {
     }
 
     // Function to remove a file
-    function rm(string[] calldata _path, string calldata _fileName)
-        public
-        validPath(_path)
-        writePermissions(_path, _fileName)
-    {
+    function rm(
+        string[] calldata _path,
+        string calldata _fileName
+    ) public validPath(_path) writePermissions(_path, _fileName) {
         bytes memory path = encodeStringArray(_path);
         require(files[path][_fileName].created != 0, "File does not exist");
 
@@ -337,11 +332,59 @@ contract Web3TransferProtocol is Ownable {
         );
     }
 
-    // Helper function to remove an element from a string array
-    function removeFromArray(string[] storage arr, string memory element)
-        internal
-        returns (string[] storage)
+    function nanoUpdate(
+        string[] calldata _path,
+        string calldata _fileName,
+        string calldata _content,
+        uint256 _chunkIndex
+    ) public validPath(_path) writePermissions(_path, _fileName) {
+        bytes memory path = encodeStringArray(_path);
+        File storage file = files[path][_fileName];
+
+        require(file.created != 0, "File does not exist");
+
+        // Ensure the chunks array is large enough
+        if (_chunkIndex >= file.chunks.length) {
+            file.chunks.push(_content);
+        } else {
+            // Only update if content is different
+            require(
+                keccak256(abi.encodePacked(_content)) !=
+                    keccak256(abi.encodePacked(file.chunks[_chunkIndex])),
+                "New content must be different from existing content"
+            );
+            file.chunks[_chunkIndex] = _content;
+        }
+
+        // Update the modified timestamp
+        file.modified = block.timestamp;
+    }
+
+    function fetchChunk(
+        string[] calldata _path,
+        string calldata _fileName,
+        uint256 _chunkIndex
+    )
+        external
+        view
+        validPath(_path)
+        readPermissions(_path, _fileName)
+        returns (string memory)
     {
+        bytes memory path = encodeStringArray(_path);
+        require(files[path][_fileName].created != 0, "File does not exist");
+        require(
+            _chunkIndex < files[path][_fileName].chunks.length,
+            "Chunk index out of bounds"
+        );
+        return files[path][_fileName].chunks[_chunkIndex];
+    }
+
+    // Helper function to remove an element from a string array
+    function removeFromArray(
+        string[] storage arr,
+        string memory element
+    ) internal returns (string[] storage) {
         for (uint256 i = 0; i < arr.length; i++) {
             if (keccak256(bytes(arr[i])) == keccak256(bytes(element))) {
                 // Move the last element to the position of the item to be removed
