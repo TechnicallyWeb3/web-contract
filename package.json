@@ -29,6 +29,7 @@
     "hardhat": "^2.22.10"
   },
   "dependencies": {
+    "@ensdomains/ens-contracts": "^1.2.2",
     "@openzeppelin/contracts": "^5.0.2",
     "@pinata/sdk": "^2.1.0",
     "dotenv": "^16.4.5",
