@@ -22,7 +22,7 @@ abstract contract WebContractV5 is Ownable {
 
     uint256 public immutable MAJOR_VERSION = 0;
     uint256 public immutable MINOR_VERSION = 5;
-    uint256 public immutable PATCH_VERSION = 3;
+    uint256 public immutable PATCH_VERSION = 4;
 
     /// @notice Returns the current version of the web contract
     /// @return Version struct containing major, minor, and patch versions
@@ -46,6 +46,7 @@ abstract contract WebContractV5 is Ownable {
     function setRedirectChainId(uint256 _chainId) public virtual onlyOwner {
         redirectChainId = _chainId;
     }
+
     /// @notice Sets the redirect address
     /// @param _address The address to redirect to
     /// @dev Can only be called by the contract owner
