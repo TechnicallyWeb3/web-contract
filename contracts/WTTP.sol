@@ -55,7 +55,7 @@ contract Web3TransferProtocol is Ownable {
     /// @notice The minor version of the protocol
     uint256 immutable minorVersion = 1;
     /// @notice The patch version of the protocol
-    uint256 immutable patchVersion = 4;
+    uint256 immutable patchVersion = 5;
 
     /// @notice Retrieves the current version of the protocol
     /// @return Version struct containing major, minor, and patch versions
@@ -461,3 +461,189 @@ contract Web3TransferProtocol is Ownable {
         return arr;
     }
 }
+
+// pragma solidity ^0.8.20;
+
+// import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
+// /// @title LinuxVirtualFS
+// /// @notice An abstract contract implementing a file system-like structure on the blockchain
+// /// @dev Inherits from OpenZeppelin's Ownable contract for access control
+// abstract contract LinuxVirtualFS is Ownable {
+//     /// @notice Initializes the contract and sets up default permission levels and root directory
+//     /// @dev Calls Ownable constructor with msg.sender as the initial owner
+//     constructor() Ownable(msg.sender) {
+//         // ... existing code ...
+//     }
+
+//     // ... existing code ...
+
+//     /// @notice Locks the file system, preventing further modifications
+//     /// @dev Can only be called by the contract owner
+//     function lockFS() external virtual onlyOwner {
+//         isLocked = true;
+//     }
+
+//     // Add to WTTTP contract
+//     // /// @notice The chain ID for the browser to redirect to, if set
+//     // uint256 public redirectChainId;
+
+//     // /// @notice Sets the redirect chain ID
+//     // /// @param _chainId The chain ID to redirect to
+//     // /// @dev Can only be called by the contract owner
+//     // function setRedirectChainId(uint256 _chainId) external onlyOwner {
+//     //     redirectChainId = _chainId;
+//     // }
+
+//     // /// @notice The IPFS hash for the browser to redirect to, if set
+//     // string public redirectIPFSHash;
+
+//     // /// @notice Sets the redirect IPFS hash
+//     // /// @param _hash The IPFS hash to redirect to
+//     // /// @dev Can only be called by the contract owner
+//     // function setRedirectIPFSHash(string memory _hash) external onlyOwner {
+//     //     redirectIPFSHash = _hash;
+//     // }
+
+//     // ... existing code ...
+
+//     /// @notice Sets the default permission level for a group
+//     /// @param _groupId The ID of the group
+//     /// @param group The permission structure for the group
+//     /// @dev Can only be called by the contract owner
+//     function setDefaultPermissionLevel(
+//         uint8 _groupId,
+//         Permission calldata group
+//     ) public virtual onlyOwner {
+//         permissionLevels[_groupId] = group;
+//     }
+
+//     /// @notice Sets the permission level for a specific user
+//     /// @param _user The address of the user
+//     /// @param _permissionLevel The permission level to set for the user
+//     /// @dev Can only be called by the contract owner
+//     function setUserPermissionLevel(
+//         address _user,
+//         uint8 _permissionLevel
+//     ) public virtual onlyOwner {
+//         userPermissions[_user] = _permissionLevel;
+//     }
+
+//     // ... existing code ...
+
+//     /// @notice Lists the contents of a directory
+//     /// @param _path The path to the directory
+//     /// @return The Directory structure containing the directory's contents
+//     function ls(
+//         string[] calldata _path
+//     )
+//         external
+//         view
+//         virtual
+//         validPath(_path)
+//         readPermissions(_path, "")
+//         returns (Directory memory)
+//     {
+//         return directories[encodeStringArray(_path)];
+//     }
+
+//     /// @notice Creates a new directory
+//     /// @param _path The path where the new directory should be created
+//     function mkdir(
+//         string[] calldata _path
+//     ) external virtual validPath(getParentPath(_path)) writePermissions(_path, "") {
+//         // ... existing code ...
+//     }
+
+//     /// @notice Removes a directory
+//     /// @param _path The path of the directory to remove
+//     function rmdir(
+//         string[] calldata _path
+//     ) public virtual validPath(_path) writePermissions(getParentPath(_path), "") {
+//         // ... existing code ...
+//     }
+
+//     /// @notice Sets custom permissions for a directory
+//     /// @param _path The path of the directory
+//     /// @param permissionLevel The permission level to set
+//     /// @param _permission The permission structure to apply
+//     function chmodDir(
+//         string[] memory _path,
+//         uint256 permissionLevel,
+//         Permission memory _permission
+//     ) external virtual validPath(_path) onlyOwner {
+//         // ... existing code ...
+//     }
+
+//     // ... existing code ...
+
+//     /// @notice Creates a new file or updates the modification time of an existing file
+//     /// @param _path The path where the file should be created or updated
+//     /// @param _fileName The name of the file
+//     function touch(
+//         string[] calldata _path,
+//         string calldata _fileName
+//     ) public virtual validPath(_path) writePermissions(_path, _fileName) {
+//         // ... existing code ...
+//     }
+
+//     /// @notice Removes a file
+//     /// @param _path The path of the file to remove
+//     /// @param _fileName The name of the file to remove
+//     function rm(
+//         string[] calldata _path,
+//         string calldata _fileName
+//     ) public virtual validPath(_path) writePermissions(_path, _fileName) {
+//         // ... existing code ...
+//     }
+
+//     /// @notice Updates a specific chunk of a file
+//     /// @param _path The path of the file to update
+//     /// @param _fileName The name of the file to update
+//     /// @param _content The new content for the chunk
+//     /// @param _chunkIndex The index of the chunk to update
+//     function nanoUpdate(
+//         string[] calldata _path,
+//         string calldata _fileName,
+//         string calldata _content,
+//         uint256 _chunkIndex
+//     ) public virtual validPath(_path) writePermissions(_path, _fileName) {
+//         // ... existing code ...
+//     }
+
+//     /// @notice Retrieves a specific chunk of a file
+//     /// @param _path The path of the file
+//     /// @param _fileName The name of the file
+//     /// @param _chunkIndex The index of the chunk to retrieve
+//     /// @return The content of the specified chunk
+//     function fetchChunk(
+//         string[] calldata _path,
+//         string calldata _fileName,
+//         uint256 _chunkIndex
+//     )
+//         external
+//         view
+//         virtual
+//         validPath(_path)
+//         readPermissions(_path, _fileName)
+//         returns (string memory)
+//     {
+//         // ... existing code ...
+//     }
+
+//     /// @notice Sets custom permissions for a file
+//     /// @param _path The path of the file
+//     /// @param _fileName The name of the file
+//     /// @param permissionLevel The permission level to set
+//     /// @param _permission The permission structure to apply
+//     function chmod(
+//         string[] memory _path,
+//         string calldata _fileName,
+//         uint256 permissionLevel,
+//         Permission memory _permission
+//     ) external virtual validPath(_path) writePermissions(_path, _fileName) {
+//         // ... existing code ...
+//     }
+
+//     // ... existing code ...
+// }
