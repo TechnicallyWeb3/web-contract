@@ -32,6 +32,7 @@ abstract contract WebContractV5 is Ownable {
 
     /// @notice The chain ID for the browser to redirect to, if set
     uint256 private redirectChainId;
+    address private redirectAddress;
 
     /// @notice Gets the redirect chain ID
     /// @return The chain ID to redirect to
@@ -44,6 +45,18 @@ abstract contract WebContractV5 is Ownable {
     /// @dev Can only be called by the contract owner
     function setRedirectChainId(uint256 _chainId) public virtual onlyOwner {
         redirectChainId = _chainId;
+    }
+    /// @notice Sets the redirect address
+    /// @param _address The address to redirect to
+    /// @dev Can only be called by the contract owner
+    function setRedirectAddress(address _address) public virtual onlyOwner {
+        redirectAddress = _address;
+    }
+
+    /// @notice Gets the redirect address
+    /// @return The address to redirect to
+    function getRedirectAddress() public view virtual returns (address) {
+        return redirectAddress;
     }
 
     /// @notice The IPFS hash for the browser to redirect to, if set
