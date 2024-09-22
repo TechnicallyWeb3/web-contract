@@ -256,11 +256,14 @@ abstract contract WebContractV5 is Ownable {
     /// @param _duration Duration of the renewal in seconds
     /// @dev Can only be called by the owner
     function renewENSDomain(string memory _name, uint256 _duration) public virtual onlyOwner {
+        // Ensure the contract is on Ethereum mainnet
+        require(block.chainid == 1, "This function can only be called on Ethereum mainnet");
+
         bytes32 labelHash = keccak256(bytes(_name));
         uint256 tokenId = uint256(labelHash);
         
         // Get the ENS registry address
-        ENS ens = ENS(0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e);
+        ENS ens = ENS(0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e);        
         
         // Get the .eth registrar controller
         address ethRegistrarControllerAddress = ens.owner(bytes32(uint256(labelHash)));
