@@ -6,6 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/IERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/IERC721.sol";
 import {ENS} from "@ensdomains/ens-contracts/contracts/registry/ENS.sol";
 import {IETHRegistrarController} from "@ensdomains/ens-contracts/contracts/registry/IETHRegistrarController.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
 abstract contract WebContractV5 is Ownable {
     struct Version {
@@ -20,6 +21,30 @@ abstract contract WebContractV5 is Ownable {
 
     function webContractVersion() public pure returns (Version memory) {
         return Version(MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION);
+    }
+
+    bool private isLocked;
+    bool private isImmutable;
+
+    function isLocked() public view virtual returns (bool) {
+        return isLocked;
+    }
+
+    modifier notLocked() {
+        require(!isLocked && !isImmutable, "Contract is locked");
+        _;
+    }
+
+    function lockContract() external virtual notLocked onlyOwner {
+        isLocked = true;
+    }
+
+    function unlockContract() external virtualonlyOwner {
+        isLocked = false;
+    }
+
+    function makeImmutable() external virtual onlyOwner {
+        isImmutable = true;
     }
 
     mapping(address => bool) private admins;
@@ -62,7 +87,7 @@ abstract contract WebContractV5 is Ownable {
         string calldata _content,
         string calldata _contentType,
         uint256 _chunkIndex
-    ) public virtual onlyAdmin {
+    ) public virtual onlyAdmin notLocked {
         ResourceFile storage file = resourceChunks[_path];
         string[] storage chunks = resourceChunks[_path].content;
         string storage contentType = resourceChunks[_path].contentType;
@@ -108,7 +133,7 @@ abstract contract WebContractV5 is Ownable {
         return resourceChunks[path].content.length;
     }
 
-    function removeResource(string memory path) public virtual onlyAdmin {
+    function removeResource(string memory path) public virtual onlyAdmin notLocked {
         delete resourceChunks[path];
     }
 
@@ -121,6 +146,11 @@ abstract contract WebContractV5 is Ownable {
         IERC20 token = IERC20(_tokenContract);
         require(_amount <= token.balanceOf(address(this)), "Insufficient token balance");
         require(token.transfer(_to, _amount), "Token transfer failed");
+    }
+    
+    function onERC721Received(address, address, uint256, bytes memory) public virtual returns (bytes4) {
+        // Implement ERC721Receiver interface to allow receiving in contracts
+        return this.onERC721Received.selector;
     }
 
     function withdrawERC721(address _tokenContract, address _to, uint256 _tokenId) public virtual onlyOwner {
@@ -153,4 +183,28 @@ abstract contract WebContractV5 is Ownable {
     }
     
     event ENSDomainRenewed(string name, uint256 duration, uint256 cost);
+
+    // Add approval functionality
+    mapping(address => bool) private _approvals;
+
+    event Approval(address indexed owner, address indexed approved, bool approved);
+
+    function approve(address to, bool approved) public virtual onlyOwner {
+        _approvals[to] = approved;
+        emit Approval(owner(), to, approved);
+    }
+
+    function isApproved(address operator) public view virtual returns (bool) {
+        return _approvals[operator];
+    }
+
+    // Add transferFrom functionality
+    function transferFrom(address from, address to) public virtual {
+        require(from == owner(), "WebContractV5: transfer from incorrect owner");
+        require(to != address(0), "WebContractV5: transfer to the zero address");
+        require(msg.sender == owner() || _approvals[msg.sender], "WebContractV5: transfer caller is not owner nor approved");
+
+        _transferOwnership(to);
+    }
+
 }
