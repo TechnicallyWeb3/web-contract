@@ -4,23 +4,12 @@ pragma solidity ^0.8.20;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
+/// @title Web3TransferProtocol
+/// @notice A contract implementing a file system-like structure on the blockchain
+/// @dev Inherits from OpenZeppelin's Ownable contract for access control
 contract Web3TransferProtocol is Ownable {
-    // Function to encode string array to bytes
-    function encodeStringArray(
-        string[] memory arr
-    ) internal pure returns (bytes memory) {
-        bytes memory encoded = abi.encode(arr);
-        return encoded;
-    }
-
-    // Function to decode bytes back to string array
-    function decodeStringArray(
-        bytes memory encoded
-    ) internal pure returns (string[] memory) {
-        string[] memory arr = abi.decode(encoded, (string[]));
-        return arr;
-    }
-
+    /// @notice Initializes the contract and sets up default permission levels and root directory
+    /// @dev Calls Ownable constructor with msg.sender as the initial owner
     constructor() Ownable(msg.sender) {
         // set default permission levels for groups
         // public/read-only
@@ -53,64 +42,72 @@ contract Web3TransferProtocol is Ownable {
         });
     }
 
-    /// @dev Versioning system for the protocol
+    /// @notice Represents the version of the protocol
+    /// @dev Used for tracking protocol updates
     struct Version {
         uint256 major;
         uint256 minor;
         uint256 patch;
     }
 
+    /// @notice The major version of the protocol
     uint256 immutable majorVersion = 0;
+    /// @notice The minor version of the protocol
     uint256 immutable minorVersion = 1;
-    uint256 immutable patchVersion = 0;
+    /// @notice The patch version of the protocol
+    uint256 immutable patchVersion = 4;
 
+    /// @notice Retrieves the current version of the protocol
+    /// @return Version struct containing major, minor, and patch versions
     function getVersion() public pure returns (Version memory) {
         return Version(majorVersion, minorVersion, patchVersion);
     }
 
+    /// @notice Indicates whether the file system is locked
     bool public isLocked;
 
+    /// @notice Locks the file system, preventing further modifications
+    /// @dev Can only be called by the contract owner
     function lockFS() external onlyOwner {
         isLocked = true;
     }
 
+    /// @notice The chain ID for the browserto redirect to, if set
     uint256 public redirectChainId;
 
+    /// @notice Sets the redirect chain ID
+    /// @param _chainId The chain ID to redirect to
+    /// @dev Can only be called by the contract owner
     function setRedirectChainId(uint256 _chainId) external onlyOwner {
         redirectChainId = _chainId;
     }
 
+    /// @notice The IPFS hash for the browser to redirect to, if set
     string public redirectIPFSHash;
 
+    /// @notice Sets the redirect IPFS hash
+    /// @param _hash The IPFS hash to redirect to
+    /// @dev Can only be called by the contract owner
     function setRedirectIPFSHash(string memory _hash) external onlyOwner {
         redirectIPFSHash = _hash;
     }
 
-    /// @dev encoding tools for path strings
-    // Function to encode string array to bytes
-    // function encodeStringArray(string[] memory arr) internal pure returns (bytes memory) {
-    //     bytes memory encoded = abi.encode(arr);
-    //     return encoded;
-    // }
-
-    // // Function to decode bytes back to string array
-    // function decodeStringArray(bytes memory encoded) internal pure returns (string[] memory) {
-    //     string[] memory arr = abi.decode(encoded, (string[]));
-    //     return arr;
-    // }
-
-    /// @dev Permission structure
+    /// @notice Represents the permission structure for groups, files and directories
     struct Permission {
         bool read;
         bool write;
         bool execute;
     }
 
-    // default permission levels for groups
+    /// @notice Mapping of permission levels to their corresponding permissions
     mapping(uint8 => Permission) private permissionLevels;
-    // user group permissions
+    /// @notice Mapping of user addresses to their permission levels
     mapping(address => uint8) private userPermissions;
 
+    /// @notice Sets the default permission level for a group
+    /// @param _groupId The ID of the group
+    /// @param group The permission structure for the group
+    /// @dev Can only be called by the contract owner
     function setDefaultPermissionLevel(
         uint8 _groupId,
         Permission calldata group
@@ -118,6 +115,10 @@ contract Web3TransferProtocol is Ownable {
         permissionLevels[_groupId] = group;
     }
 
+    /// @notice Sets the permission level for a specific user
+    /// @param _user The address of the user
+    /// @param _permissionLevel The permission level to set for the user
+    /// @dev Can only be called by the contract owner
     function setUserPermissionLevel(
         address _user,
         uint8 _permissionLevel
@@ -125,6 +126,9 @@ contract Web3TransferProtocol is Ownable {
         userPermissions[_user] = _permissionLevel;
     }
 
+    /// @notice Modifier to check write permissions for a file or directory
+    /// @param _path The path to the file or directory
+    /// @param _fileName The name of the file (empty string for directories)
     modifier writePermissions(string[] memory _path, string memory _fileName) {
         require(!isLocked, "File system is locked");
         bytes memory path = encodeStringArray(_path);
@@ -148,6 +152,9 @@ contract Web3TransferProtocol is Ownable {
         _;
     }
 
+    /// @notice Modifier to check read permissions for a file or directory
+    /// @param _path The path to the file or directory
+    /// @param _fileName The name of the file (empty string for directories)
     modifier readPermissions(string[] memory _path, string memory _fileName) {
         bytes memory path = encodeStringArray(_path);
         uint8 _userPermissionLevel = userPermissions[msg.sender];
@@ -172,7 +179,7 @@ contract Web3TransferProtocol is Ownable {
         _;
     }
 
-    /// @dev Directory structure
+    /// @notice Represents the structure of a directory
     struct Directory {
         string[] files;
         string[] directories;
@@ -180,6 +187,8 @@ contract Web3TransferProtocol is Ownable {
         bool customPermissions;
     }
 
+    /// @notice Modifier to check if a given path is valid
+    /// @param _path The path to validate
     modifier validPath(string[] memory _path) {
         require(_path.length > 0, "Path is empty");
         require(
@@ -194,6 +203,9 @@ contract Web3TransferProtocol is Ownable {
         _;
     }
 
+    /// @notice Gets the parent path of a given path
+    /// @param _path The path to get the parent of
+    /// @return The parent path
     function getParentPath(
         string[] calldata _path
     ) internal pure returns (string[] memory) {
@@ -205,10 +217,14 @@ contract Web3TransferProtocol is Ownable {
         return parentPath;
     }
 
+    /// @notice Mapping of encoded paths to Directory structures
     mapping(bytes => Directory) private directories;
+    /// @notice Mapping of encoded paths to permission levels for directories
     mapping(bytes => mapping(uint256 => Permission)) private dirPermissions;
 
-    // Function to list contents of a directory
+    /// @notice Lists the contents of a directory
+    /// @param _path The path to the directory
+    /// @return The Directory structure containing the directory's contents
     function ls(
         string[] calldata _path
     )
@@ -221,7 +237,8 @@ contract Web3TransferProtocol is Ownable {
         return directories[encodeStringArray(_path)];
     }
 
-    // Function to create a new directory
+    /// @notice Creates a new directory
+    /// @param _path The path where the new directory should be created
     function mkdir(
         string[] calldata _path
     ) external validPath(getParentPath(_path)) writePermissions(_path, "") {
@@ -239,16 +256,24 @@ contract Web3TransferProtocol is Ownable {
         );
     }
 
-    // Function to remove a directory
+    /// @notice Removes a directory
+    /// @param _path The path of the directory to remove
     function rmdir(
         string[] calldata _path
     ) public validPath(_path) writePermissions(getParentPath(_path), "") {
         bytes memory path = encodeStringArray(_path);
         delete directories[path];
+        removeFromArray(
+            directories[encodeStringArray(getParentPath(_path))].directories,
+            _path[_path.length - 1]
+        );
         // cannot delete permissions, be cautious when recreating a directory with the same path
     }
 
-    // Function to set custom permissions for a directory
+    /// @notice Sets custom permissions for a directory
+    /// @param _path The path of the directory
+    /// @param permissionLevel The permission level to set
+    /// @param _permission The permission structure to apply
     function chmodDir(
         string[] memory _path,
         uint256 permissionLevel,
@@ -259,6 +284,7 @@ contract Web3TransferProtocol is Ownable {
         dirPermissions[path][permissionLevel] = _permission;
     }
 
+    /// @notice Represents the structure of a file
     struct File {
         string[] chunks;
         uint256 fileType;
@@ -267,32 +293,15 @@ contract Web3TransferProtocol is Ownable {
         bool customPermissions;
     }
 
+    /// @notice Mapping of encoded paths and file names to File structures
     mapping(bytes => mapping(string => File)) private files;
+    /// @notice Mapping of encoded paths, file names, and permission levels to their corresponding permissions
     mapping(bytes => mapping(string => mapping(uint256 => Permission)))
         private filePermissions;
 
-    // // Function to add an item to a directory
-    // function addToDirectory(string memory dirPath, string memory item) internal {
-    //     require(isDirectory[dirPath], "Directory does not exist");
-    //     directories[dirPath].push(item);
-    // }
-
-    // // Function to remove an item from a directory
-    // function removeFromDirectory(string memory dirPath, string memory item) internal {
-    //     require(isDirectory[dirPath], "Directory does not exist");
-    //     uint256 length = directories[dirPath].length;
-    //     for (uint256 i = 0; i < length; i++) {
-    //         if (keccak256(bytes(directories[dirPath][i])) == keccak256(bytes(item))) {
-    //             // Move the last element to the position of the item to be removed
-    //             directories[dirPath][i] = directories[dirPath][length - 1];
-    //             // Remove the last element
-    //             directories[dirPath].pop();
-    //             break;
-    //         }
-    //     }
-    // }
-
-    // Function to create a new file
+    /// @notice Creates a new file or updates the modification time of an existing file
+    /// @param _path The path where the file should be created or updated
+    /// @param _fileName The name of the file
     function touch(
         string[] calldata _path,
         string calldata _fileName
@@ -313,7 +322,9 @@ contract Web3TransferProtocol is Ownable {
         }
     }
 
-    // Function to remove a file
+    /// @notice Removes a file
+    /// @param _path The path of the file to remove
+    /// @param _fileName The name of the file to remove
     function rm(
         string[] calldata _path,
         string calldata _fileName
@@ -332,6 +343,11 @@ contract Web3TransferProtocol is Ownable {
         );
     }
 
+    /// @notice Updates a specific chunk of a file
+    /// @param _path The path of the file to update
+    /// @param _fileName The name of the file to update
+    /// @param _content The new content for the chunk
+    /// @param _chunkIndex The index of the chunk to update
     function nanoUpdate(
         string[] calldata _path,
         string calldata _fileName,
@@ -345,7 +361,10 @@ contract Web3TransferProtocol is Ownable {
 
         // Ensure the chunks array is large enough
         if (_chunkIndex >= file.chunks.length) {
-            require(_chunkIndex == file.chunks.length, "Chunk index out of bounds");
+            require(
+                _chunkIndex == file.chunks.length,
+                "Chunk index out of bounds"
+            );
             file.chunks.push(_content);
         } else {
             // Only update if content is different
@@ -361,6 +380,11 @@ contract Web3TransferProtocol is Ownable {
         file.modified = block.timestamp;
     }
 
+    /// @notice Retrieves a specific chunk of a file
+    /// @param _path The path of the file
+    /// @param _fileName The name of the file
+    /// @param _chunkIndex The index of the chunk to retrieve
+    /// @return The content of the specified chunk
     function fetchChunk(
         string[] calldata _path,
         string calldata _fileName,
@@ -381,7 +405,26 @@ contract Web3TransferProtocol is Ownable {
         return files[path][_fileName].chunks[_chunkIndex];
     }
 
-    // Helper function to remove an element from a string array
+    /// @notice Sets custom permissions for a file
+    /// @param _path The path of the file
+    /// @param _fileName The name of the file
+    /// @param permissionLevel The permission level to set
+    /// @param _permission The permission structure to apply
+    function chmod(
+        string[] memory _path,
+        string calldata _fileName,
+        uint256 permissionLevel,
+        Permission memory _permission
+    ) external validPath(_path) writePermissions(_path, _fileName) {
+        bytes memory path = encodeStringArray(_path);
+        files[path][_fileName].customPermissions = true;
+        filePermissions[path][_fileName][permissionLevel] = _permission;
+    }
+
+    /// @notice Removes an element from a string array
+    /// @param arr The array to modify
+    /// @param element The element to remove
+    /// @return The modified array
     function removeFromArray(
         string[] storage arr,
         string memory element
@@ -398,14 +441,23 @@ contract Web3TransferProtocol is Ownable {
         return arr;
     }
 
-    function chmod(
-        string[] memory _path,
-        string calldata _fileName,
-        uint256 permissionLevel,
-        Permission memory _permission
-    ) external validPath(_path) writePermissions(_path, _fileName) {
-        bytes memory path = encodeStringArray(_path);
-        files[path][_fileName].customPermissions = true;
-        filePermissions[path][_fileName][permissionLevel] = _permission;
+    /// @notice Encodes a string array into bytes
+    /// @param arr The string array to encode
+    /// @return The encoded bytes
+    function encodeStringArray(
+        string[] memory arr
+    ) internal pure returns (bytes memory) {
+        bytes memory encoded = abi.encode(arr);
+        return encoded;
+    }
+
+    /// @notice Decodes bytes back into a string array
+    /// @param encoded The encoded bytes to decode
+    /// @return The decoded string array
+    function decodeStringArray(
+        bytes memory encoded
+    ) internal pure returns (string[] memory) {
+        string[] memory arr = abi.decode(encoded, (string[]));
+        return arr;
     }
 }
