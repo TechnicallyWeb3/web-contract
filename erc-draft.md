@@ -10,6 +10,7 @@ Status: Draft
 Type: Standards Track
 Category: ERC
 Created: 2023-10-XX
+discussions-to: <URL to discussion thread>
 ```
 
 ### Simple Summary
@@ -144,3 +145,7 @@ An example implementation is provided in the `WebContractV5` contract.
 - [ERC721: Non-Fungible Token Standard](https://eips.ethereum.org/EIPS/eip-721)
 - [ERC4804: URL Standards](https://eips.ethereum.org/EIPS/eip-4804)
 - [ENS: Ethereum Name Service](https://ens.domains/)
+
+### Copyright Waiver
+
+Copyright and related rights waived via [CC0](https://creativecommons.org/publicdomain/zero/1.0/).

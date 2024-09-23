@@ -45,6 +45,7 @@ abstract contract WebContractV5 is Ownable {
     /// @dev Can only be called by the contract owner
     function setRedirectChainId(uint256 _chainId) public virtual onlyOwner {
         redirectChainId = _chainId;
+        emit RedirectChainIdSet(_chainId);
     }
 
     /// @notice Sets the redirect address
@@ -52,6 +53,7 @@ abstract contract WebContractV5 is Ownable {
     /// @dev Can only be called by the contract owner
     function setRedirectAddress(address _address) public virtual onlyOwner {
         redirectAddress = _address;
+        emit RedirectAddressSet(_address);
     }
 
     /// @notice Gets the redirect address
@@ -74,6 +76,7 @@ abstract contract WebContractV5 is Ownable {
     /// @dev Can only be called by the contract owner
     function setRedirectIPFSHash(string memory _hash) public virtual onlyOwner {
         redirectIPFSHash = _hash;
+        emit RedirectIPFSHashSet(_hash);
     }
 
     /// @notice Whether the contract is locked or immutable
@@ -96,18 +99,21 @@ abstract contract WebContractV5 is Ownable {
     /// @dev Can only be called by the owner when the contract is not locked
     function lockContract() public virtual notLocked onlyOwner {
         isLocked = true;
+        emit ContractLocked();
     }
 
     /// @notice Unlocks the contract
     /// @dev Can only be called by the owner
     function unlockContract() public virtual onlyOwner {
         isLocked = false;
+        emit ContractUnlocked();
     }
 
     /// @notice Makes the contract immutable, permanently locking it
     /// @dev Can only be called by the owner
     function makeImmutable() public virtual onlyOwner {
         isImmutable = true;
+        emit ContractMadeImmutable();
     }
 
     mapping(address => bool) private admins;
@@ -125,6 +131,7 @@ abstract contract WebContractV5 is Ownable {
     ///      Ensure any override maintains the intended admin addition logic.
     function addAdmin(address _admin) public virtual onlyOwner {
         admins[_admin] = true;
+        emit AdminAdded(_admin);
     }
 
     /// @notice Removes an admin
@@ -134,6 +141,7 @@ abstract contract WebContractV5 is Ownable {
     ///      Ensure any override maintains the intended admin removal logic.
     function removeAdmin(address _admin) public virtual onlyOwner {
         admins[_admin] = false;
+        emit AdminRemoved(_admin);
     }
 
     /// @notice Checks if an address is an admin
@@ -199,6 +207,8 @@ abstract contract WebContractV5 is Ownable {
         } else {
             chunks[_chunkIndex] = _content;
         }
+
+        emit ResourceChunkSet(_path, _chunkIndex);
     }
 
     /// @notice Retrieves a chunk of a resource file
@@ -226,6 +236,7 @@ abstract contract WebContractV5 is Ownable {
     /// @dev Can only be called by an admin when the contract is not locked
     function removeResource(string memory path) public virtual onlyAdmin notLocked {
         delete resourceChunks[path];
+        emit ResourceRemoved(path);
     }
 
     /// @notice Withdraws Ether from the contract
@@ -235,6 +246,7 @@ abstract contract WebContractV5 is Ownable {
     function withdrawEther(address payable _to, uint256 _amount) public virtual onlyOwner {
         require(_amount <= address(this).balance, "Insufficient balance");
         _to.transfer(_amount);
+        emit EtherWithdrawn(_to, _amount);
     }
 
     /// @notice Withdraws ERC20 tokens from the contract
@@ -246,6 +258,7 @@ abstract contract WebContractV5 is Ownable {
         IERC20 token = IERC20(_tokenContract);
         require(_amount <= token.balanceOf(address(this)), "Insufficient token balance");
         require(token.transfer(_to, _amount), "Token transfer failed");
+        emit ERC20Withdrawn(_tokenContract, _to, _amount);
     }
     
     /// @notice Handles the receipt of an ERC721 token
@@ -263,6 +276,7 @@ abstract contract WebContractV5 is Ownable {
         IERC721 token = IERC721(_tokenContract);
         require(token.ownerOf(_tokenId) == address(this), "Token not owned by contract");
         require(token.transferFrom(address(this), _to, _tokenId), "Token transfer failed");
+        emit ERC721Withdrawn(_tokenContract, _to, _tokenId);
     }
 
     /// @notice Renews an ENS domain
@@ -294,14 +308,8 @@ abstract contract WebContractV5 is Ownable {
         
         emit ENSDomainRenewed(_name, _duration, price);
     }
-    
-    /// @dev Emitted when an ENS domain is renewed
-    event ENSDomainRenewed(string name, uint256 duration, uint256 cost);
 
     mapping(address => bool) private _approvals;
-
-    /// @dev Emitted when an address is approved or disapproved
-    event Approval(address indexed owner, address indexed approved, bool approved);
 
     /// @notice Approves or disapproves an address to manage the contract
     /// @param to Address to approve or disapprove
@@ -330,4 +338,49 @@ abstract contract WebContractV5 is Ownable {
 
         _transferOwnership(to);
     }
+
+    /// @dev Emitted when the redirect chain ID is set
+    event RedirectChainIdSet(uint256 chainId);
+
+    /// @dev Emitted when the redirect address is set
+    event RedirectAddressSet(address redirectAddress);
+
+    /// @dev Emitted when the redirect IPFS hash is set
+    event RedirectIPFSHashSet(string ipfsHash);
+
+    /// @dev Emitted when the contract is locked
+    event ContractLocked();
+
+    /// @dev Emitted when the contract is unlocked
+    event ContractUnlocked();
+
+    /// @dev Emitted when the contract is made immutable
+    event ContractMadeImmutable();
+
+    /// @dev Emitted when an admin is added
+    event AdminAdded(address admin);
+
+    /// @dev Emitted when an admin is removed
+    event AdminRemoved(address admin);
+
+    /// @dev Emitted when a resource chunk is set
+    event ResourceChunkSet(string path, uint256 chunkIndex);
+
+    /// @dev Emitted when a resource is removed
+    event ResourceRemoved(string path);
+
+    /// @dev Emitted when Ether is withdrawn
+    event EtherWithdrawn(address to, uint256 amount);
+
+    /// @dev Emitted when ERC20 tokens are withdrawn
+    event ERC20Withdrawn(address tokenContract, address to, uint256 amount);
+
+    /// @dev Emitted when an ERC721 token is withdrawn
+    event ERC721Withdrawn(address tokenContract, address to, uint256 tokenId);
+
+    /// @dev Emitted when an ENS domain is renewed
+    event ENSDomainRenewed(string name, uint256 duration, uint256 cost);
+
+    /// @dev Emitted when an address is approved or disapproved
+    event Approval(address indexed owner, address indexed approved, bool approved);
 }
