@@ -5,6 +5,7 @@ import "./tasks/deployContract";
 import "./tasks/uploadToIPFS";
 import "./tasks/writeToContract";
 import "./tasks/readFromContract";
+import "./tasks/buildOrdinal";
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ const config: HardhatUserConfig = {
     polygon: {
       url: process.env.RPC_URL_137 || "",
       accounts: [process.env.PRIVATE_KEY || ""],
+      
     }
   }
 };

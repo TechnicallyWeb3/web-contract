@@ -1,0 +1,16 @@
+# Which files to ignore when deploying to a blockchain
+
+# Ignore specific file types
+*.map
+*.tmp
+*.temp
+
+# Ignore large media files (you may want to handle these separately)
+*.mp4
+*.mov
+*.avi
+*.png
+*.jpg
+*.gif
+*.svg
+*.json

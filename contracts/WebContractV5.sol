@@ -4,9 +4,9 @@ pragma solidity ^0.8.20;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/IERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/IERC721.sol";
+import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {ENS} from "@ensdomains/ens-contracts/contracts/registry/ENS.sol";
 import {IETHRegistrarController} from "@ensdomains/ens-contracts/contracts/registry/IETHRegistrarController.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
 /// @title WebContractV5
 /// @notice This contract provides functionality for managing web resources, admin roles, and various token operations

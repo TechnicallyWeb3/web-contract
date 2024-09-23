@@ -1,0 +1,60 @@
+{
+    // to achieve this you will need to write the chunks in reverse order to know the "next_chunk"
+    "index": {
+        "entrypoint": "index.html",
+        // ipfs, ordinal, txid if redirect is needed, optional attributes
+        "redirect_type": "",
+        "redirect_value": "",
+        // optional, if the file is too large to fit into a 100kb chunk, we can use the "next_chunk" field to link to the next index chunk
+        "next_chunk": {
+            "link_type": "ipfs",
+            "link_value": "ipfs_hash"
+        },
+        // optional, if the file had a previous revision, we can use the "previous_revision" field to link to the previous index's first chunk
+        "previous_revision": {
+            "link_type": "ipfs",
+            "link_value": "ipfs_hash"
+        }
+    },
+    "files": {
+        // generated based on the structure of the build folder, 
+        // files were given as an example but you should use rules to determine what type of link to use
+        "index.html": {
+            "contentType": "text/html",
+            "link_type": "raw",
+            "chunks": {
+                "0": {
+                    "data": "<html><body><h1>Hello World</h1></body></html>"
+                }
+            }
+        },
+        "index.css": {
+            "contentType": "text/css",
+            "link_type": "ordinal",
+            "chunks": {
+                "0": {
+                    "link_value": "ordinal_id"
+                }
+            }
+        },
+        "index.js": {
+            "contentType": "application/javascript",
+            "link_type": "txid",
+            "chunks": {
+                "0": {
+                    "link_value": "tx_id"
+                }
+            }
+        },
+        "image.png": {
+            "contentType": "image/png",
+            "link_type": "ipfs",
+            "chunks": {
+                "0": {
+                    "link_value": "ipfs_hash"
+                }
+            }
+        }
+
+    }
+}
