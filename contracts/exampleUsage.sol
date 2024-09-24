@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.20;  
 
-import {WebContract} from "./WebContract.sol";
+import {WebContract} from "@tw3/solidity/contracts/WebContract.sol";
 
 contract MyWebContract is WebContract {
 
@@ -10,5 +10,4 @@ contract MyWebContract is WebContract {
     function setSmallFile(string calldata path, string calldata contentType, string calldata content) external onlyOwner {
         setResourceChunk(path, content, contentType, 0);
     }
-
 }

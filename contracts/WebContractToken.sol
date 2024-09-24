@@ -9,7 +9,7 @@ import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Recei
 /// @title WebContract
 /// @notice This contract provides functionality for managing web resources, admin roles, and various token operations
 /// @dev Inherits from Ownable and implements additional features like locking, admin management, and resource handling
-abstract contract WebContract is Ownable {
+abstract contract WebContractToken is Ownable {
     /// @notice Represents the version of the contract
     /// @dev Used to track major, minor, and patch versions
     struct Version {
@@ -18,8 +18,8 @@ abstract contract WebContract is Ownable {
         uint256 patchVersion;
     }
 
-    uint256 public immutable MAJOR_VERSION = 0;
-    uint256 public immutable MINOR_VERSION = 6;
+    uint256 public immutable MAJOR_VERSION = 1;
+    uint256 public immutable MINOR_VERSION = 0;
     uint256 public immutable PATCH_VERSION = 0;
 
     /// @notice Returns the current version of the web contract
@@ -144,8 +144,9 @@ abstract contract WebContract is Ownable {
 
     /// @notice Represents a resource file with content chunks and content type
     struct ResourceFile {
-        string[] content;
+        bytes[] content;
         string contentType;
+        uint8 redirectCode;
     }
 
     mapping(string => ResourceFile) private resourceChunks;
@@ -158,12 +159,13 @@ abstract contract WebContract is Ownable {
     /// @dev Can only be called by an admin when the contract is not locked
     function setResourceChunk(
         string calldata _path,
-        string calldata _content,
+        bytes calldata _content,
         string calldata _contentType,
-        uint256 _chunkIndex
+        uint256 _chunkIndex,
+        uint8 _redirectCode
     ) public virtual onlyAdmin notLocked {
         ResourceFile storage file = resourceChunks[_path];
-        string[] storage chunks = resourceChunks[_path].content;
+        bytes[] storage chunks = resourceChunks[_path].content;
         string storage contentType = resourceChunks[_path].contentType;
 
         require(bytes(contentType).length > 0, "Content type is required");
@@ -179,22 +181,21 @@ abstract contract WebContract is Ownable {
             "Content type mismatch"
         );
 
-        // Ensure the chunks are not written out of order
-        if (_chunkIndex >= chunks.length) {
-            require(_chunkIndex == chunks.length, "Chunk index out of bounds");
-        } else {
-            // Only update if content is different
-            require(
-                keccak256(abi.encodePacked(_content)) !=
-                    keccak256(abi.encodePacked(chunks[_chunkIndex])),
-                "New content must be different from existing"
-            );
+        require(_chunkIndex <= chunks.length, "Chunk index out of bounds");
+
+        if (
+            keccak256(_content) !=
+            keccak256(chunks[_chunkIndex])
+        ) {
+            if (_chunkIndex == chunks.length) {
+                chunks.push(_content);
+            } else {
+                chunks[_chunkIndex] = _content;
+            }
         }
 
-        if (_chunkIndex == chunks.length) {
-            chunks.push(_content);
-        } else {
-            chunks[_chunkIndex] = _content;
+        if (_redirectCode != file.redirectCode) {
+            file.redirectCode = _redirectCode;
         }
 
         emit ResourceChunkSet(_path, _chunkIndex);
@@ -203,11 +204,11 @@ abstract contract WebContract is Ownable {
     /// @notice Retrieves a chunk of a resource file
     /// @param path Path of the resource
     /// @param index Index of the chunk
-    /// @return string memory, string memory The content chunk and content type
+    /// @return bytes memory, string memory The content chunk and content type
     function getResourceChunk(
         string memory path,
         uint256 index
-    ) public view virtual returns (string memory, string memory) {
+    ) public view virtual returns (bytes memory, string memory) {
         ResourceFile memory file = resourceChunks[path];
         require(index < file.content.length, "Chunk index out of bounds");
         return (file.content[index], file.contentType);
@@ -216,10 +217,20 @@ abstract contract WebContract is Ownable {
     /// @notice Gets the total number of chunks for a resource
     /// @param path Path of the resource
     /// @return uint256 Total number of chunks
-    function getTotalChunks(
+    function _getTotalChunks(
         string memory path
-    ) public view virtual returns (uint256) {
+    ) internal view virtual returns (uint256) {
         return resourceChunks[path].content.length;
+    }
+
+    function getResource(
+        string memory path
+    ) public view virtual returns (uint256, string memory, uint8) {
+        return (
+            resourceChunks[path].content.length, 
+            resourceChunks[path].contentType, 
+            resourceChunks[path].redirectCode
+        );
     }
 
     /// @notice Removes a resource
@@ -230,12 +241,6 @@ abstract contract WebContract is Ownable {
     ) public virtual onlyAdmin notLocked {
         delete resourceChunks[path];
         emit ResourceRemoved(path);
-    }
-
-    function getResource(
-        string memory path
-    ) public view virtual returns (ResourceFile memory) {
-        return resourceChunks[path];
     }
 
     /// @notice Withdraws Ether from the contract
