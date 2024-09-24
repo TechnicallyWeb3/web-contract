@@ -1,0 +1,25 @@
+# Max size to store in contract
+MAX_FILE_SIZE=524288
+
+# Files and folders to include in the contract even if they are above size limit
+INCLUDE=[
+    *.html
+    *.css
+    *.js
+]
+
+# Files and folders to exclude from being stored in contract even if they are below size limit
+EXCLUDE=[
+    /assets/*
+    /images/*
+    *.pdf
+    *.png
+    *.jpg
+    *.jpeg
+    *.gif
+    *.svg
+    *.webp
+    *.mp4
+    *.mov
+    *.avi
+]
