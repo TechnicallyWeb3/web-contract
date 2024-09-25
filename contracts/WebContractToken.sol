@@ -17,7 +17,7 @@ abstract contract WebContractToken is TokenManager {
 
     uint256 public immutable MAJOR_VERSION = 1;
     uint256 public immutable MINOR_VERSION = 0;
-    uint256 public immutable PATCH_VERSION = 1;
+    uint256 public immutable PATCH_VERSION = 2;
 
     /// @notice Returns the current version of the web contract
     /// @return Version struct containing major, minor, and patch versions
@@ -162,37 +162,30 @@ abstract contract WebContractToken is TokenManager {
         uint8 _redirectCode
     ) public virtual onlyAdmin notLocked {
         ResourceFile storage file = resourceChunks[_path];
-        bytes[] storage chunks = resourceChunks[_path].content;
-        string storage contentType = resourceChunks[_path].contentType;
+        bytes[] storage chunks = file.content;
 
         require(bytes(_contentType).length > 0, "Content type is required");
 
-        if (bytes(contentType).length == 0 && bytes(_contentType).length > 0) {
-            // If the contentType is not set, set it
+        if (bytes(file.contentType).length == 0) {
+            // If the contentType is not set, this is a new file
             file.contentType = _contentType;
-        }
+            chunks.push(_content);
+            file.redirectCode = _redirectCode;
+        } else {
+            require(
+                keccak256(abi.encodePacked(file.contentType)) == keccak256(abi.encodePacked(_contentType)),
+                "Content type mismatch"
+            );
 
-        require(
-            keccak256(bytes(file.contentType)) ==
-                keccak256(bytes(_contentType)),
-            "Content type mismatch"
-        );
+            require(_chunkIndex <= chunks.length, "Chunk index out of bounds");
 
-        require(_chunkIndex <= chunks.length, "Chunk index out of bounds");
-
-        if (
-            keccak256(_content) !=
-            keccak256(chunks[_chunkIndex])
-        ) {
-            if (_chunkIndex == chunks.length) {
-                chunks.push(_content);
-            } else {
+            if (keccak256(_content) != keccak256(chunks[_chunkIndex])) {
                 chunks[_chunkIndex] = _content;
             }
-        }
 
-        if (_redirectCode != file.redirectCode) {
-            file.redirectCode = _redirectCode;
+            if (_redirectCode != file.redirectCode) {
+                file.redirectCode = _redirectCode;
+            }
         }
 
         emit ResourceChunkSet(_path, _chunkIndex);
