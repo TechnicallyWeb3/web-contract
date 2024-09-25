@@ -17,11 +17,12 @@ contract BackpackFactory {
         soulBoundNFT = SoulBoundNFT(_soulBoundNFTAddress);
     }
 
-    function deployWebContractToken() external {
+    function deployWebContractToken() external returns(address) {
         BackpackNFT newWCT = new BackpackNFT(msg.sender);
         address wctAddress = address(newWCT);
         uint256 tokenId = soulBoundNFT.mint(wctAddress);
         wctIndex[tokenId] = wctAddress;
+        return wctAddress;
     }
 }
 
