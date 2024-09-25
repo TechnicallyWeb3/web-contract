@@ -9,15 +9,15 @@ contract BackpackNFT is WebContractToken {
     constructor(address owner) WebContractToken(owner) {}
 }
 
-contract BackpackDeployer {
-    mapping (uint => address) public wctIndex;
+contract BackpackFactory {
+    mapping(uint => address) public wctIndex;
     SoulBoundNFT public soulBoundNFT;
 
     constructor(address _soulBoundNFTAddress) {
         soulBoundNFT = SoulBoundNFT(_soulBoundNFTAddress);
     }
 
-    function deployWCT() external {
+    function deployWebContractToken() external {
         BackpackNFT newWCT = new BackpackNFT(msg.sender);
         address wctAddress = address(newWCT);
         uint256 tokenId = soulBoundNFT.mint(wctAddress);
@@ -26,25 +26,27 @@ contract BackpackDeployer {
 }
 
 contract SoulBoundNFT is ERC721, Ownable {
-
     uint256 public wctCount;
-    BackpackDeployer public backpackDeployer;
+    BackpackFactory public backpackFactory;
 
     constructor() ERC721("BackpackNFTs", "WCT") Ownable(msg.sender) {
         _mint(msg.sender, wctCount);
         wctCount++;
     }
 
-    modifier onlyBackpackDeployer() {
-        require(msg.sender == address(backpackDeployer), "Only backpack deployer can call this function");
+    modifier onlyBackpackFactory() {
+        require(
+            msg.sender == address(backpackFactory),
+            "Only backpack deployer can call this function"
+        );
         _;
     }
 
-    function setBackpackDeployer(address _backpackDeployer) external onlyOwner {
-        backpackDeployer = BackpackDeployer(_backpackDeployer);
+    function setBackpackFactory(address _BackpackFactory) external onlyOwner {
+        backpackFactory = BackpackFactory(_BackpackFactory);
     }
 
-    function mint(address to) external onlyBackpackDeployer returns (uint256) {
+    function mint(address to) external onlyBackpackFactory returns (uint256) {
         uint256 tokenId = wctCount;
         _mint(to, tokenId);
         wctCount++;
@@ -52,19 +54,33 @@ contract SoulBoundNFT is ERC721, Ownable {
     }
 
     // Override _update function to block transfers unless by owner
-    function _update(address to, uint256 tokenId, address auth) internal override returns (address) {
+    function _update(
+        address to,
+        uint256 tokenId,
+        address auth
+    ) internal override returns (address) {
         address from = _ownerOf(tokenId);
-        require(from == address(0) || msg.sender == owner(), "Tokens are soul-bound and non-transferable.");
+        require(
+            from == address(0) || msg.sender == owner(),
+            "Tokens are soul-bound and non-transferable."
+        );
         return super._update(to, tokenId, auth);
     }
 
     // Override setApprovalForAll function to prevent approvals
-    function _setApprovalForAll(address /*sender*/, address /*operator*/, bool /*approved*/) internal virtual override(ERC721) {
+    function _setApprovalForAll(
+        address /*sender*/,
+        address /*operator*/,
+        bool /*approved*/
+    ) internal virtual override(ERC721) {
         revert("Soul-bound tokens cannot be approved for all.");
     }
 
     // Add this function to override the internal _approve function
-    function approve(address /*to*/, uint256 /*tokenId*/) public virtual override(ERC721) {
+    function approve(
+        address /*to*/,
+        uint256 /*tokenId*/
+    ) public virtual override(ERC721) {
         revert("Soul-bound tokens cannot be approved.");
     }
 }
