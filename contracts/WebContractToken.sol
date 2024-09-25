@@ -17,7 +17,7 @@ abstract contract WebContractToken is TokenManager {
 
     uint256 public immutable MAJOR_VERSION = 1;
     uint256 public immutable MINOR_VERSION = 0;
-    uint256 public immutable PATCH_VERSION = 0;
+    uint256 public immutable PATCH_VERSION = 1;
 
     /// @notice Returns the current version of the web contract
     /// @return Version struct containing major, minor, and patch versions
@@ -165,7 +165,7 @@ abstract contract WebContractToken is TokenManager {
         bytes[] storage chunks = resourceChunks[_path].content;
         string storage contentType = resourceChunks[_path].contentType;
 
-        require(bytes(contentType).length > 0, "Content type is required");
+        require(bytes(_contentType).length > 0, "Content type is required");
 
         if (bytes(contentType).length == 0 && bytes(_contentType).length > 0) {
             // If the contentType is not set, set it
