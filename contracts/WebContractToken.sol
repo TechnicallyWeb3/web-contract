@@ -16,8 +16,8 @@ abstract contract WebContractToken is TokenManager {
     }
 
     uint256 public immutable MAJOR_VERSION = 1;
-    uint256 public immutable MINOR_VERSION = 0;
-    uint256 public immutable PATCH_VERSION = 2;
+    uint256 public immutable MINOR_VERSION = 1;
+    uint256 public immutable PATCH_VERSION = 0;
 
     /// @notice Returns the current version of the web contract
     /// @return Version struct containing major, minor, and patch versions
