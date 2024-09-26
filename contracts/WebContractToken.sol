@@ -63,7 +63,7 @@ abstract contract WebContractToken is TokenManager {
 
     /// @notice Whether the contract is locked or immutable
     bool private writeLocked;
-    bool private isImmutable;
+    bool private writeImmutable;
 
     /// @notice Checks if the contract is currently locked
     /// @return bool indicating whether the contract is locked
@@ -71,9 +71,13 @@ abstract contract WebContractToken is TokenManager {
         return writeLocked;
     }
 
+    function isImmutable() public view returns (bool) {
+        return writeImmutable;
+    }
+
     /// @notice Modifier to ensure function can only be called when contract is not locked or immutable
     modifier notLocked() {
-        require(!writeLocked && !isImmutable, "Contract is locked");
+        require(!writeLocked && !writeImmutable, "Contract is locked");
         _;
     }
 
@@ -94,7 +98,7 @@ abstract contract WebContractToken is TokenManager {
     /// @notice Makes the contract immutable, permanently locking it
     /// @dev Can only be called by the owner, cannot be undone!
     function makeImmutable() public virtual onlyOwner {
-        isImmutable = true;
+        writeImmutable = true;
         emit ContractMadeImmutable();
     }
 
@@ -202,15 +206,6 @@ abstract contract WebContractToken is TokenManager {
         ResourceFile memory file = resourceChunks[path];
         require(index < file.content.length, "Chunk index out of bounds");
         return (file.content[index], file.contentType);
-    }
-
-    /// @notice Gets the total number of chunks for a resource
-    /// @param path Path of the resource
-    /// @return uint256 Total number of chunks
-    function _getTotalChunks(
-        string memory path
-    ) internal view virtual returns (uint256) {
-        return resourceChunks[path].content.length;
     }
 
     function getResource(
