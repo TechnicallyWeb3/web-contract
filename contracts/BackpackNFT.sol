@@ -65,7 +65,7 @@ contract BackpackFactory is Ownable {
     }
 }
 
-contract BackpackNFT is ERC721 {
+contract BackpackNFT is ERC721, TokenManager{
     mapping (uint256 => Backpack) public backpacks;
     uint256 public backpackCount;
     BackpackFactory public backpackFactory;
@@ -78,44 +78,14 @@ contract BackpackNFT is ERC721 {
         _;
     }
 
-    constructor(address _backpackFactory, string memory _name, string memory _symbol) ERC721(_name, _symbol) {
+    constructor(
+        address _backpackFactory, 
+        string memory _name, 
+        string memory _symbol
+    ) ERC721(_name, _symbol) TokenManager(BackpackFactory(_backpackFactory).owner()) {
         backpackFactory = BackpackFactory(_backpackFactory);
         
     }
-
-    //     // returns owner of backpack instead of the backpack address.
-    // function _ownerOf(uint256 tokenId) internal view override returns (address) {
-    //     if(backpackCount > tokenId) {
-    //         return backpacks[tokenId].owner();
-    //     } 
-        
-    //     else return address(0);
-    // }
-
-    // function _isAuthorized(address owner, address spender, uint tokenId) internal view override returns (bool) {
-    //     return
-    //         spender != address(0) &&
-    //         (
-    //             owner == spender || 
-    //             isApprovedForAll(owner, spender) || 
-    //             _getApproved(tokenId) == spender ||
-    //             backpackOf(tokenId) == spender
-    //         );
-    // }
-
-    // function _update(address to, uint256 tokenId, address auth) internal override returns (address) {
-    //     address from = _ownerOf(tokenId);
-
-    //     if (from != address(0)) {
-    //         if (to == address(0)) {
-    //             backpacks[tokenId].renounceOwnership();
-    //         }
-    //         else backpacks[tokenId].transferOwnership(to);
-    //         return from;
-    //     }
-
-    //     return super._update(to, tokenId, auth);
-    // }
 
     function mint(address to, address backpack) external onlyBackpackFactory returns (uint256) {
         backpackCount++;
@@ -156,4 +126,6 @@ contract BackpackNFT is ERC721 {
 
     // Event emitted when uri is updated
     event URIUpdated(uint256 indexed tokenId, string uri);
+
+    
 }
