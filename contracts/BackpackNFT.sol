@@ -56,8 +56,8 @@ contract BackpackFactory is Ownable, TokenManager {
         backpackCost = _cost;
     }
 
-    function deployWebContractToken() external /*payable*/ returns(address, uint256) {
-        // require(msg.value == backpackCost, "Incorrect funds sent");
+    function deployWebContractToken() external payable returns(address, uint256) {
+        require(msg.value == backpackCost, "Incorrect funds sent");
         Backpack newWCT = new Backpack(msg.sender, address(this));
         address wctAddress = address(newWCT);
         uint256 tokenId = backpackNFT.mint(msg.sender, wctAddress);
