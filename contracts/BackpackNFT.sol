@@ -44,11 +44,11 @@ contract Backpack is WebContractToken {
     }
 }
 
-contract BackpackFactory is Ownable {
+contract BackpackFactory is Ownable, TokenManager {
     BackpackNFT public backpackNFT;
     uint256 public backpackCost;
 
-    constructor() Ownable(msg.sender) {
+    constructor(address _owner) TokenManager(_owner) {
         backpackNFT = new BackpackNFT(address(this), "TW3 Backpack", "BKPK");
     }
 
@@ -127,5 +127,17 @@ contract BackpackNFT is ERC721, TokenManager{
     // Event emitted when uri is updated
     event URIUpdated(uint256 indexed tokenId, string uri);
 
-    
+        /**
+     * @dev Receive function to prevent accidental Ether transfers to this contract
+     */
+    receive() external payable {
+        revert("Please send value to your Backpack contract address instead");
+    }
+
+        /**
+     * @dev Fallback function to prevent accidental Ether transfers to this contract
+     */
+    fallback() external payable {
+        revert("Please send value to your Backpack contract address instead");
+    }
 }
