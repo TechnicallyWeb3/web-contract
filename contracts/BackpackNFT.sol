@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "./WebContractToken.sol";
 
 // Interface for Backpack contracts
@@ -80,7 +79,7 @@ contract BackpackFactory is TokenManager {
         return backpackCosts[tier];
     }
 
-    function deployWebContractToken()
+    function deployBackpack()
         external
         payable
         returns (address, uint256)
