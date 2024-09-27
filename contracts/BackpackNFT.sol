@@ -46,20 +46,26 @@ contract Backpack is WebContractToken {
 
 contract BackpackFactory is TokenManager {
     BackpackNFT public backpackNFT;
-    uint256 public backpackCost;
     uint256 public backpackCount;
     uint256 immutable maxBackpacks = 10000;
+    uint256[] private backpackCosts;
 
-    constructor(address _owner) TokenManager(_owner) {
+    constructor(address _owner, uint256[] memory _backpackCosts) TokenManager(_owner) {
+        require(_backpackCosts.length == 10, "Must provide 10 cost tiers");
         backpackNFT = new BackpackNFT(address(this), "TW3 Backpack", "BKPK");
+        backpackCosts = _backpackCosts;
     }
 
-    function setBackpackCost(uint256 _cost) external onlyOwner {
-        backpackCost = _cost;
+    function getBackpackCost() public view returns (uint256) {
+        uint256 tier = backpackCount / 1000;
+        if (tier >= 10) {
+            return backpackCosts[9];
+        }
+        return backpackCosts[tier];
     }
 
     function deployWebContractToken() external payable returns(address, uint256) {
-        require(msg.value == backpackCost, "Incorrect funds sent");
+        require(msg.value == getBackpackCost() || backpackCount < 3, "Incorrect funds sent");
         require(backpackCount < maxBackpacks, "Max backpacks reached");
         Backpack newWCT = new Backpack(msg.sender, address(this));
         address wctAddress = address(newWCT);
