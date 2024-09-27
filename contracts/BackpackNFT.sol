@@ -63,9 +63,8 @@ contract BackpackFactory is TokenManager {
     uint256[] private backpackCosts;
 
     constructor(
-        address _owner,
         uint256[] memory _backpackCosts
-    ) TokenManager(_owner) {
+    ) TokenManager(msg.sender) {
         require(_backpackCosts.length == 10, "Must provide 10 cost tiers");
         backpackNFT = new BackpackNFT(address(this), "TW3 Backpack", "BKPK");
         backpackCosts = _backpackCosts;
