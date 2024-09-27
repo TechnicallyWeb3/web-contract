@@ -44,9 +44,11 @@ contract Backpack is WebContractToken {
     }
 }
 
-contract BackpackFactory is Ownable, TokenManager {
+contract BackpackFactory is TokenManager {
     BackpackNFT public backpackNFT;
     uint256 public backpackCost;
+    uint256 public backpackCount;
+    uint256 immutable maxBackpacks = 10000;
 
     constructor(address _owner) TokenManager(_owner) {
         backpackNFT = new BackpackNFT(address(this), "TW3 Backpack", "BKPK");
@@ -58,9 +60,11 @@ contract BackpackFactory is Ownable, TokenManager {
 
     function deployWebContractToken() external payable returns(address, uint256) {
         require(msg.value == backpackCost, "Incorrect funds sent");
+        require(backpackCount < maxBackpacks, "Max backpacks reached");
         Backpack newWCT = new Backpack(msg.sender, address(this));
         address wctAddress = address(newWCT);
         uint256 tokenId = backpackNFT.mint(msg.sender, wctAddress);
+        backpackCount++;
         return (wctAddress, tokenId);
     }
 }
