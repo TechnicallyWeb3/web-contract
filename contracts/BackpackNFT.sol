@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./WebContract.sol";
 
 // Interface for Backpack contracts
-interface IBackpack {
+interface IWebContractToken {
     function majorVersion() external view returns (uint256);
 }
 
-contract Backpack is WebContract {
+contract WebContractToken is WebContract {
     constructor(address _owner, address _backpackFactory) WebContract(_owner) {
-        backpackFactory = BackpackFactory(_backpackFactory);
+        backpackFactory = Web4Factory(_backpackFactory);
         soulBoundNFT = backpackFactory.backpackNFT();
     }
 
-    BackpackFactory public backpackFactory;
+    Web4Factory public backpackFactory;
     BackpackNFT public soulBoundNFT;
     uint256 public tokenId;
 
@@ -30,7 +30,7 @@ contract Backpack is WebContract {
     }
 
     function onERC721Received(address, address to, uint256, bytes memory) public view override returns (bytes4) {
-        try IBackpack(to).majorVersion() returns (uint256 version) {
+        try IWebContractToken(to).majorVersion() returns (uint256 version) {
             if (version == MAJOR_VERSION) {
                 revert("Backpack#Backpacks cannot be transferred to other Backpacks");
             }
@@ -44,7 +44,7 @@ contract Backpack is WebContract {
     }
 }
 
-contract BackpackFactory is Ownable {
+contract Web4Factory is Ownable {
     BackpackNFT public backpackNFT;
     uint256 public backpackCost;
 
@@ -58,17 +58,17 @@ contract BackpackFactory is Ownable {
 
     function deployWebContractToken() external /*payable*/ returns(address, uint256) {
         // require(msg.value == backpackCost, "Incorrect funds sent");
-        Backpack newWCT = new Backpack(msg.sender, address(this));
+        WebContractToken newWCT = new WebContractToken(msg.sender, address(this));
         address wctAddress = address(newWCT);
         uint256 tokenId = backpackNFT.mint(msg.sender, wctAddress);
         return (wctAddress, tokenId);
     }
 }
 
-contract BackpackNFT is ERC721 {
-    mapping (uint256 => Backpack) public backpacks;
+contract BackpackNFT is ERC721URIStorage {
+    mapping (uint256 => WebContractToken) public backpacks;
     uint256 public backpackCount;
-    BackpackFactory public backpackFactory;
+    Web4Factory public backpackFactory;
 
     modifier onlyBackpackFactory() {
         require(
@@ -79,48 +79,13 @@ contract BackpackNFT is ERC721 {
     }
 
     constructor(address _backpackFactory, string memory _name, string memory _symbol) ERC721(_name, _symbol) {
-        backpackFactory = BackpackFactory(_backpackFactory);
-        
+        backpackFactory = Web4Factory(_backpackFactory);
     }
-
-    //     // returns owner of backpack instead of the backpack address.
-    // function _ownerOf(uint256 tokenId) internal view override returns (address) {
-    //     if(backpackCount > tokenId) {
-    //         return backpacks[tokenId].owner();
-    //     } 
-        
-    //     else return address(0);
-    // }
-
-    // function _isAuthorized(address owner, address spender, uint tokenId) internal view override returns (bool) {
-    //     return
-    //         spender != address(0) &&
-    //         (
-    //             owner == spender || 
-    //             isApprovedForAll(owner, spender) || 
-    //             _getApproved(tokenId) == spender ||
-    //             backpackOf(tokenId) == spender
-    //         );
-    // }
-
-    // function _update(address to, uint256 tokenId, address auth) internal override returns (address) {
-    //     address from = _ownerOf(tokenId);
-
-    //     if (from != address(0)) {
-    //         if (to == address(0)) {
-    //             backpacks[tokenId].renounceOwnership();
-    //         }
-    //         else backpacks[tokenId].transferOwnership(to);
-    //         return from;
-    //     }
-
-    //     return super._update(to, tokenId, auth);
-    // }
 
     function mint(address to, address backpack) external onlyBackpackFactory returns (uint256) {
         backpackCount++;
-        backpacks[backpackCount] = Backpack(backpack);
-        Backpack(backpack).setTokenId(backpackCount);
+        backpacks[backpackCount] = WebContractToken(backpack);
+        WebContractToken(backpack).setTokenId(backpackCount);
         _mint(to, backpackCount);
         return (backpackCount);
     }
@@ -129,15 +94,8 @@ contract BackpackNFT is ERC721 {
         return address(backpacks[tokenId]);
     }
 
-    // Mapping to store uri for each token
-    mapping(uint256 => string) private _tokenURI;
-
-    /**
-     * @dev Allows the owner of a token to update its uri
-     * @param tokenId The ID of the token to update
-     * @param uri The new uri JSON string
-     */
-    function updateURI(uint256 tokenId, string memory uri) public {
+    // Replace the updateURI function with setTokenURI
+    function setTokenURI(uint256 tokenId, string memory _tokenURI) public {
         require(
             (backpackFactory.owner() == msg.sender ||
             ownerOf(tokenId) == msg.sender ||
@@ -146,14 +104,9 @@ contract BackpackNFT is ERC721 {
             !backpacks[tokenId].isImmutable()),
             "Not authorized to update uri"
         );
-        _tokenURI[tokenId] = uri;
-        emit URIUpdated(tokenId, uri);
+        _setTokenURI(tokenId, _tokenURI);
     }
 
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        return _tokenURI[tokenId];
-     }
-
-    // Event emitted when uri is updated
+    // Keep the URIUpdated event if you want to maintain compatibility
     event URIUpdated(uint256 indexed tokenId, string uri);
 }
