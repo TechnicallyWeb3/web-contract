@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./WebContract.sol";
 
-// Interface for Backpack contracts
+// Interface for WebContracts
 interface IWebContractToken {
     function majorVersion() external view returns (uint256);
 }
@@ -21,7 +21,7 @@ contract WebContractToken is WebContract {
     uint256 public tokenId;
 
     modifier onlySoulBoundNFT {
-        require(msg.sender == address(soulBoundNFT), "Backpack#OnlySoulBoundNFT may set the token ID");
+        require(msg.sender == address(soulBoundNFT), "WC#OnlySoulBoundNFT may set the token ID");
         _;
     }
 
@@ -32,14 +32,14 @@ contract WebContractToken is WebContract {
     function onERC721Received(address, address to, uint256, bytes memory) public view override returns (bytes4) {
         try IWebContractToken(to).majorVersion() returns (uint256 version) {
             if (version == MAJOR_VERSION) {
-                revert("Backpack#Backpacks cannot be transferred to other Backpacks");
+                revert("WC#WCs cannot be transferred to other WCs");
             }
         } catch {}
         return this.onERC721Received.selector;
     }
 
     function owner() public view override returns (address) {
-        require (tokenId != 0, "Backpack#BackpackNFT failed to set TokenId");
+        require (tokenId != 0, "WC#WCNFT failed to set TokenId");
         return soulBoundNFT.ownerOf(tokenId);
     }
 }
@@ -49,10 +49,10 @@ contract Web4Factory is Ownable {
     uint256 public backpackCost;
 
     constructor() Ownable(msg.sender) {
-        backpackNFT = new WebContractNFT(address(this), "TW3 Backpack", "BKPK");
+        backpackNFT = new WebContractNFT(address(this), "TW3 WebContract", "TW3WC");
     }
 
-    function setBackpackCost(uint256 _cost) external onlyOwner {
+    function setWebContractCost(uint256 _cost) external onlyOwner {
         backpackCost = _cost;
     }
 
@@ -70,7 +70,7 @@ contract WebContractNFT is ERC721URIStorage {
     uint256 public backpackCount;
     Web4Factory public backpackFactory;
 
-    modifier onlyBackpackFactory() {
+    modifier onlyWebContractFactory() {
         require(
             msg.sender == address(backpackFactory),
             "Only the backpack factory can call this function"
@@ -82,7 +82,7 @@ contract WebContractNFT is ERC721URIStorage {
         backpackFactory = Web4Factory(_backpackFactory);
     }
 
-    function mint(address to, address backpack) external onlyBackpackFactory returns (uint256) {
+    function mint(address to, address backpack) external onlyWebContractFactory returns (uint256) {
         backpackCount++;
         backpacks[backpackCount] = WebContractToken(backpack);
         WebContractToken(backpack).setTokenId(backpackCount);
