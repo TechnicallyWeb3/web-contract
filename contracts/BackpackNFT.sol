@@ -4,6 +4,12 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "./WebContractToken.sol";
 
+// 0x1e4dd10761E42324819Ea3Dab9C09914b1c97172
+// 0x46B4952D06e10386972De50d65d5B5D0C4A6940F
+// 0xd02a5aE5eCcf942eE1060EcDc7E080248273Bd96
+// 0x61ba60374e0CF9a51aD846853b08B09FC163896a
+// 0x9C29F0eE3D59dFea70D616f4776F7649dA364342
+
 // Interface for Backpack contracts
 interface IBackpack {
     function majorVersion() external view returns (uint256);
