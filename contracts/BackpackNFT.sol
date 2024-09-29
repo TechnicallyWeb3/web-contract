@@ -17,7 +17,7 @@ contract WebContractToken is WebContract {
     }
 
     Web4Factory public backpackFactory;
-    BackpackNFT public soulBoundNFT;
+    WebContractNFT public soulBoundNFT;
     uint256 public tokenId;
 
     modifier onlySoulBoundNFT {
@@ -45,11 +45,11 @@ contract WebContractToken is WebContract {
 }
 
 contract Web4Factory is Ownable {
-    BackpackNFT public backpackNFT;
+    WebContractNFT public backpackNFT;
     uint256 public backpackCost;
 
     constructor() Ownable(msg.sender) {
-        backpackNFT = new BackpackNFT(address(this), "TW3 Backpack", "BKPK");
+        backpackNFT = new WebContractNFT(address(this), "TW3 Backpack", "BKPK");
     }
 
     function setBackpackCost(uint256 _cost) external onlyOwner {
@@ -65,7 +65,7 @@ contract Web4Factory is Ownable {
     }
 }
 
-contract BackpackNFT is ERC721URIStorage {
+contract WebContractNFT is ERC721URIStorage {
     mapping (uint256 => WebContractToken) public backpacks;
     uint256 public backpackCount;
     Web4Factory public backpackFactory;
