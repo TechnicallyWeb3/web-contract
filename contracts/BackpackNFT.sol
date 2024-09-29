@@ -3,15 +3,15 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./WebContractToken.sol";
+import "./WebContract.sol";
 
 // Interface for Backpack contracts
 interface IBackpack {
     function majorVersion() external view returns (uint256);
 }
 
-contract Backpack is WebContractToken {
-    constructor(address _owner, address _backpackFactory) WebContractToken(_owner) {
+contract Backpack is WebContract {
+    constructor(address _owner, address _backpackFactory) WebContract(_owner) {
         backpackFactory = BackpackFactory(_backpackFactory);
         soulBoundNFT = backpackFactory.backpackNFT();
     }

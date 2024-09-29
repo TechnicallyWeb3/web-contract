@@ -6,7 +6,7 @@ import "./TokenManager.sol";
 /// @title WebContract
 /// @notice This contract provides functionality for managing web resources, admin roles, and various token operations
 /// @dev Inherits from Ownable and implements additional features like locking, admin management, and resource handling
-abstract contract WebContractToken is TokenManager {
+abstract contract WebContract is TokenManager {
     /// @notice Represents the version of the contract
     /// @dev Used to track major, minor, and patch versions
     struct Version {
