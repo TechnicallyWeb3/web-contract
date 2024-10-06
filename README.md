@@ -26,22 +26,22 @@ Note: After deployment, the contract address is automatically added to the `pack
 
 ### Upload to IPFS
 
-To upload large and unsupported assets to IPFS:
+To upload specific files or the entire build folder to IPFS:
 
 ```bash
-npx hardhat upload-ipfs-assets [action] --network <network-name>
+npx hardhat upload-ipfs-assets [files...] --network <network-name>
 ```
-- `[action]`: Optional. Use 'force' to force reupload.
+- `[files...]`: Optional. Specific files to upload. If not specified, the entire build folder will be processed.
 - `--network`: Optional. The network to upload to, if not specified, the hardhat VM network will be used.
 
 ### Write to Contract
 
-To write files to the smart contract:
+To write specific files or the entire build folder to the smart contract:
 
 ```bash
-npx hardhat write-to-contract [action] --network <network-name>
+npx hardhat write-to-contract [filePath] --network <network-name>
 ```
-- `[action]`: Optional. Use 'force' to force rewrite.
+- `[filePath]`: Optional. Relative path of the file to upload (from build folder). If not specified, the entire build folder will be processed.
 - `--network`: Optional. The network to write to, if not specified, the hardhat VM network will be used.
 
 ### Read from Contract
