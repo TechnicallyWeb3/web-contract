@@ -6,7 +6,7 @@ import "./TokenManager.sol";
 /// @title WebContract
 /// @notice This contract provides functionality for managing web resources, admin roles, and various token operations
 /// @dev Inherits from Ownable and implements additional features like locking, admin management, and resource handling
-abstract contract WebContract is TokenManager {
+abstract contract WebContractToken is TokenManager {
     /// @notice Represents the version of the contract
     /// @dev Used to track major, minor, and patch versions
     struct Version {
@@ -16,8 +16,8 @@ abstract contract WebContract is TokenManager {
     }
 
     uint256 public immutable MAJOR_VERSION = 1;
-    uint256 public immutable MINOR_VERSION = 1;
-    uint256 public immutable PATCH_VERSION = 0;
+    uint256 public immutable MINOR_VERSION = 0;
+    uint256 public immutable PATCH_VERSION = 2;
 
     /// @notice Returns the current version of the web contract
     /// @return Version struct containing major, minor, and patch versions
@@ -63,7 +63,7 @@ abstract contract WebContract is TokenManager {
 
     /// @notice Whether the contract is locked or immutable
     bool private writeLocked;
-    bool private writeImmutable;
+    bool private isImmutable;
 
     /// @notice Checks if the contract is currently locked
     /// @return bool indicating whether the contract is locked
@@ -71,13 +71,9 @@ abstract contract WebContract is TokenManager {
         return writeLocked;
     }
 
-    function isImmutable() public view returns (bool) {
-        return writeImmutable;
-    }
-
     /// @notice Modifier to ensure function can only be called when contract is not locked or immutable
     modifier notLocked() {
-        require(!writeLocked && !writeImmutable, "Contract is locked");
+        require(!writeLocked && !isImmutable, "Contract is locked");
         _;
     }
 
@@ -98,7 +94,7 @@ abstract contract WebContract is TokenManager {
     /// @notice Makes the contract immutable, permanently locking it
     /// @dev Can only be called by the owner, cannot be undone!
     function makeImmutable() public virtual onlyOwner {
-        writeImmutable = true;
+        isImmutable = true;
         emit ContractMadeImmutable();
     }
 
@@ -208,6 +204,15 @@ abstract contract WebContract is TokenManager {
         return (file.content[index], file.contentType);
     }
 
+    /// @notice Gets the total number of chunks for a resource
+    /// @param path Path of the resource
+    /// @return uint256 Total number of chunks
+    function _getTotalChunks(
+        string memory path
+    ) internal view virtual returns (uint256) {
+        return resourceChunks[path].content.length;
+    }
+
     function getResource(
         string memory path
     ) public view virtual returns (uint256, string memory, uint8) {
@@ -290,6 +295,7 @@ abstract contract WebContract is TokenManager {
 
     /// @dev Emitted when a resource is removed
     event ResourceRemoved(string path);
+
 
     /// @dev Emitted when an address is approved or disapproved
     event Approval(
