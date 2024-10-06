@@ -4,8 +4,8 @@ import path from 'path';
 import { WebsiteContract } from "../typechain-types";
 
 task("write-to-contract", "Write files to the smart contract")
-  .addPositionalParam("action", "Action to perform (use 'force' to force rewrite)", "", types.string)
-  .setAction(async ({ action }, hre) => {
+  .addOptionalPositionalParam("filePath", "Relative path of the file to upload (from build folder)", "", types.string)
+  .setAction(async ({ filePath }, hre) => {
     const config = require('../webcontract.config').default;
     const buildFolder = path.resolve(config.buildFolder);
     const deployFolder = path.join(__dirname, '..', 'deploy');
@@ -147,6 +147,16 @@ task("write-to-contract", "Write files to the smart contract")
       }
     }
 
+    async function processSpecificFile(specificPath: string) {
+      const fullPath = path.join(buildFolder, specificPath);
+      try {
+        await fs.access(fullPath);
+        await processFile(fullPath);
+      } catch (error) {
+        console.error(`Error: File not found - ${fullPath}`);
+      }
+    }
+
     function getContentType(fileExtension: string): string {
       const contentTypes: Record<string, string> = {
         '.html': 'text/html',
@@ -169,7 +179,11 @@ task("write-to-contract", "Write files to the smart contract")
     }
 
     try {
-      await processDirectory(buildFolder);
+      if (filePath) {
+        await processSpecificFile(filePath);
+      } else {
+        await processDirectory(buildFolder);
+      }
       await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
       console.log(`Manifest updated at ${manifestPath}`);
     } catch (error) {

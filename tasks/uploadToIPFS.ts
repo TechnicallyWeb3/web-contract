@@ -5,8 +5,8 @@ import path from 'path';
 import PinataClient, { PinataPinOptions } from '@pinata/sdk';
 
 task("upload-ipfs-assets", "Upload large and unsupported assets to IPFS")
-    .addPositionalParam("action", "Action to perform (use 'force' to force reupload)", "", types.string)
-    .setAction(async ({ action }, hre) => {
+    .addOptionalVariadicPositionalParam("files", "Specific files to upload", [], types.string)
+    .setAction(async ({ files }, hre) => {
         const config = require('../webcontract.config').default;
         const pinataSDK = require('@pinata/sdk');
 
@@ -41,7 +41,8 @@ task("upload-ipfs-assets", "Upload large and unsupported assets to IPFS")
 
             if (
                 !config.fileTypes.includes(fileExtension) ||
-                stats.size > config.assetLimit
+                stats.size > config.assetLimit ||
+                files.includes(relativePath)
             ) {
 
                 console.log(`Uploading ${relativePath} to IPFS...`);
@@ -69,29 +70,41 @@ task("upload-ipfs-assets", "Upload large and unsupported assets to IPFS")
             }
         }
 
-        // async function uploadToPinata(filePath: string) {
-        //     const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
-
-        //     let data = new FormData();
-        //     data.append('file', fs.createReadStream(filePath));
-
-        //     console.log(`Uploading ${filePath} to Pinata...`);
-        //     const response = await axios.post(url, data, {
-        //       maxBodyLength: 'Infinity',
-        //       headers: {
-        //         'Content-Type': `multipart/form-data; boundary=${data._boundary}`,
-        //         pinata_api_key: config.pinata.apiKey,
-        //         pinata_secret_api_key: config.pinata.apiSecret
-        //       }
-        //     });
-
-        //     console.log(`Successfully uploaded ${filePath} to Pinata. IPFS hash: ${response.data.IpfsHash}`);
-        //     return response.data.IpfsHash;
-        //   }
+        //.setAction(async ({ action }, hre) => {
+            // async function uploadToPinata(filePath: string) {
+            //     const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
+    
+            //     let data = new FormData();
+            //     data.append('file', fs.createReadStream(filePath));
+    
+            //     console.log(`Uploading ${filePath} to Pinata...`);
+            //     const response = await axios.post(url, data, {
+            //       maxBodyLength: 'Infinity',
+            //       headers: {
+            //         'Content-Type': `multipart/form-data; boundary=${data._boundary}`,
+            //         pinata_api_key: config.pinata.apiKey,
+            //         pinata_secret_api_key: config.pinata.apiSecret
+            //       }
+            //     });
+    
+            //     console.log(`Successfully uploaded ${filePath} to Pinata. IPFS hash: ${response.data.IpfsHash}`);
+            //     return response.data.IpfsHash;
+            //   }
 
         try {
             await fs.mkdir(deployFolder, { recursive: true });
-            await processDirectory(buildFolder);
+
+            if (files.length > 0) {
+                // Process specified files
+                for (const file of files) {
+                    const filePath = path.resolve(buildFolder, file);
+                    await processFile(filePath);
+                }
+            } else {
+                // Process entire directory
+                await processDirectory(buildFolder);
+            }
+
             await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
             console.log(`Manifest updated at ${manifestPath}`);
         } catch (error) {

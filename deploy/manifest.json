@@ -1,6 +1,10 @@
 {
-  "ipfsFiles": {},
+  "ipfsFiles": {
+    "styles.css": "QmZtSFFdtZCq6XpMAjNYPe6BTMZaMtbELEE1sDdiK2dBeZ"
+  },
   "contractFiles": {
-    "0xc7a7de7c1cf222f9055e488583096cc5b42d722b0a460e1c0510a71433f30556": "index.html"
+    "0xc7a7de7c1cf222f9055e488583096cc5b42d722b0a460e1c0510a71433f30556": "index.html",
+    "0xa30e23c499619e61b0d39dc6e740b2b0867efa9be78c756c50c49655e00ff86f": "index.html",
+    "0x1dbb756089e9167f3d0d3a0cdc77e434e8e85b66469feadb8ab8795c4342a1d7": "styles.css"
   }
 }
