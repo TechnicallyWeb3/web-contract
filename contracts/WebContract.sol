@@ -291,7 +291,6 @@ abstract contract WebContract is TokenManager {
     /// @dev Emitted when a resource is removed
     event ResourceRemoved(string path);
 
-
     /// @dev Emitted when an address is approved or disapproved
     event Approval(
         address indexed owner,
