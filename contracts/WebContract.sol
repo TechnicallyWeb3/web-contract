@@ -15,9 +15,9 @@ abstract contract WebContract is TokenManager {
         uint256 patchVersion;
     }
 
-    uint256 public immutable MAJOR_VERSION = 1;
-    uint256 public immutable MINOR_VERSION = 1;
-    uint256 public immutable PATCH_VERSION = 0;
+    uint256 private immutable MAJOR_VERSION = 1;
+    uint256 private immutable MINOR_VERSION = 1;
+    uint256 private immutable PATCH_VERSION = 1;
 
     /// @notice Returns the current version of the web contract
     /// @return Version struct containing major, minor, and patch versions
@@ -135,7 +135,7 @@ abstract contract WebContract is TokenManager {
     /// @return bool indicating whether the address is an admin
     /// @dev SECURITY WARNING: Overriding this function may break access control.
     ///      Ensure any override maintains the intended admin verification logic.
-    function isAdmin(address _admin) public view virtual returns (bool) {
+    function _isAdmin(address _admin) internal view virtual returns (bool) {
         return _admin == owner() || admins[_admin];
     }
 
@@ -150,7 +150,7 @@ abstract contract WebContract is TokenManager {
         uint8 redirectCode;
     }
 
-    mapping(string => ResourceFile) private resourceChunks;
+    mapping(string => ResourceFile) private resourceFiles;
 
     /// @notice Sets a chunk of a resource file
     /// @param _path Path of the resource
@@ -165,7 +165,7 @@ abstract contract WebContract is TokenManager {
         uint256 _chunkIndex,
         uint8 _redirectCode
     ) public virtual onlyAdmin notLocked {
-        ResourceFile storage file = resourceChunks[_path];
+        ResourceFile storage file = resourceFiles[_path];
         bytes[] storage chunks = file.content;
 
         require(bytes(_contentType).length > 0, "Content type is required");
@@ -203,7 +203,7 @@ abstract contract WebContract is TokenManager {
         string memory path,
         uint256 index
     ) public view virtual returns (bytes memory, string memory) {
-        ResourceFile memory file = resourceChunks[path];
+        ResourceFile memory file = resourceFiles[path];
         require(index < file.content.length, "Chunk index out of bounds");
         return (file.content[index], file.contentType);
     }
@@ -212,9 +212,9 @@ abstract contract WebContract is TokenManager {
         string memory path
     ) public view virtual returns (uint256, string memory, uint8) {
         return (
-            resourceChunks[path].content.length, 
-            resourceChunks[path].contentType, 
-            resourceChunks[path].redirectCode
+            resourceFiles[path].content.length, 
+            resourceFiles[path].contentType, 
+            resourceFiles[path].redirectCode
         );
     }
 
@@ -224,48 +224,10 @@ abstract contract WebContract is TokenManager {
     function removeResource(
         string memory path
     ) public virtual onlyAdmin notLocked {
-        delete resourceChunks[path];
+        delete resourceFiles[path];
         emit ResourceRemoved(path);
     }
 
-    mapping(address => bool) private _approvals;
-
-    /// @notice Approves or disapproves an address to manage the contract
-    /// @param to Address to approve or disapprove
-    /// @param approved True to approve, false to disapprove
-    /// @dev Can only be called by the owner
-    function approve(address to, bool approved) public virtual onlyOwner {
-        _approvals[to] = approved;
-        emit Approval(owner(), to, approved);
-    }
-
-    /// @notice Checks if an address is approved to manage the contract
-    /// @param operator Address to check
-    /// @return bool indicating whether the address is approved
-    function isApproved(address operator) public view virtual returns (bool) {
-        return _approvals[operator];
-    }
-
-    /// @notice Transfers ownership of the contract
-    /// @param from Current owner's address
-    /// @param to New owner's address
-    /// @dev Can be called by the owner or an approved address
-    function transferFrom(address from, address to) public virtual {
-        require(
-            from == owner(),
-            "WebContractV5: transfer from incorrect owner"
-        );
-        require(
-            to != address(0),
-            "WebContractV5: transfer to the zero address"
-        );
-        require(
-            msg.sender == owner() || _approvals[msg.sender],
-            "WebContractV5: transfer caller is not owner nor approved"
-        );
-
-        _transferOwnership(to);
-    }
 
     /// @dev Emitted when the redirect information is set
     event RedirectSet(string redirectValue, string redirectType, uint8 redirectCode);
@@ -291,10 +253,4 @@ abstract contract WebContract is TokenManager {
     /// @dev Emitted when a resource is removed
     event ResourceRemoved(string path);
 
-    /// @dev Emitted when an address is approved or disapproved
-    event Approval(
-        address indexed owner,
-        address indexed operator,
-        bool approved
-    );
 }

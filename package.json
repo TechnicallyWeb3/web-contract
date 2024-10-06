@@ -36,5 +36,5 @@
     "dotenv": "^16.4.5",
     "ipfs-http-client": "^60.0.1"
   },
-  "contract": "0xfA302E4d1A809f6071C1A7Fa387F155dD1E15730"
+  "contract": "0x5b6e54a94628B3Bdd86231881a891C5EA2Ac8E46"
 }

@@ -37,7 +37,7 @@ task("write-to-contract", "Write files to the smart contract")
       if (!manifest.ipfsFiles[relativePath]) {
         console.log(`Processing ${relativePath}...`);
         console.log(`Reading file: ${filePath}`);
-        let content = await fs.readFile(filePath, 'utf8');
+        let content = await fs.readFile(filePath);
         console.log(`File content length: ${content.length} characters`);
 
         const contentType = getContentType(fileExtension);
@@ -47,17 +47,17 @@ task("write-to-contract", "Write files to the smart contract")
         const ipfsFiles = Object.entries(manifest.ipfsFiles);
         console.log(`Number of IPFS files in manifest: ${ipfsFiles.length}`);
 
-        for (const [ipfsPath, ipfsHash] of ipfsFiles) {
-          console.log(`Processing IPFS file: ${ipfsPath}`);
-          const ipfsUrl = config.ipfsPath.replace('{cid}', ipfsHash);
-          // console.log(`Generated IPFS URL: ${ipfsUrl}`);
-          const regex = new RegExp(ipfsPath, 'g');
-          // console.log(`Created regex: ${regex}`);
-          if (content.match(regex)) {
-            console.log(`Found reference to ${ipfsPath} in ${relativePath}. Replacing with IPFS URL: ${ipfsUrl}`);
-            content = content.replace(regex, ipfsUrl);
-          }
-        }
+        // for (const [ipfsPath, ipfsHash] of ipfsFiles) {
+        //   console.log(`Processing IPFS file: ${ipfsPath}`);
+        //   const ipfsUrl = config.ipfsPath.replace('{cid}', ipfsHash);
+        //   // console.log(`Generated IPFS URL: ${ipfsUrl}`);
+        //   const regex = new RegExp(ipfsPath, 'g');
+        //   // console.log(`Created regex: ${regex}`);
+        //   if (content.match(regex)) {
+        //     console.log(`Found reference to ${ipfsPath} in ${relativePath}. Replacing with IPFS URL: ${ipfsUrl}`);
+        //     content = content.replace(regex, ipfsUrl);
+        //   }
+        // }
 
         // If the file itself is in IPFS, use the IPFS URL instead of the content
         if (manifest.ipfsFiles[relativePath]) {
@@ -71,9 +71,9 @@ task("write-to-contract", "Write files to the smart contract")
           console.log(`File ${relativePath} is not on IPFS. Using original content.`);
         }
 
-        async function writeChunks(content: string) {
+        async function writeChunks(content: Buffer) {
           // console.log(`Starting writeChunks for ${relativePath}`);
-          const chunkSize = 24 * 1024; // 24KB chunks
+          const chunkSize = 16 * 1024; // 16KB chunks
           console.log(`Chunk size: ${chunkSize} bytes`);
           let transactionHash: string = '';
           let contentChanged = false;
@@ -83,26 +83,40 @@ task("write-to-contract", "Write files to the smart contract")
 
           for (let i = 0; i < content.length; i += chunkSize) {
             console.log(`Processing chunk ${Math.floor(i / chunkSize) + 1}`);
-            const chunk = content.slice(i, i + chunkSize);
+            const chunk = content.subarray(i, i + chunkSize);
             console.log(`Read chunk: ${i / chunkSize} @ ${relativePath}`);
-            let existingChunk: [string, string] = ['', ''];
+            let existingChunk: [Buffer, string] = [Buffer.alloc(0), ''];
             try {
-              existingChunk = await websiteContract.getResourceChunk(relativePath, i / chunkSize);
+              const [existingContent, existingContentType] = await websiteContract.getResourceChunk(relativePath, i / chunkSize);
+              existingChunk = [Buffer.from(existingContent), existingContentType];
             } catch (error) {
-              // If the chunk doesn't exist, we'll use an empty chunk
               console.log(`Chunk ${Math.floor(i / chunkSize) + 1} doesn't exist yet. Creating new chunk.`);
             }
-            console.log(`Existing chunk:`, existingChunk);
+            console.log(`Existing chunk length: ${existingChunk[0].length}`);
+            console.log(`New chunk length: ${chunk.length}`);
 
             console.log(`Comparing new chunk with existing chunk...`);
-            if (chunk !== existingChunk[0]) {
-              const tx = await websiteContract.setResourceChunk(relativePath, chunk, contentType);
+            const newChunkHex = `0x${chunk.toString('hex')}`;
+            const existingChunkUtf8 = existingChunk[0].toString('utf8');
+            if (newChunkHex !== existingChunkUtf8) {
+              console.log(`Chunks are different. Logging first 50 bytes of each:`);
+              // console.log(`New chunk (hex): ${newChunkHex.slice(0, 50)}...`);
+              // console.log(`Existing chunk (utf8): ${existingChunkUtf8.slice(0, 50)}...`);
+              // console.log(`Content matches: ${newChunkHex === existingChunkUtf8}`)
+
+              const tx = await websiteContract.setResourceChunk(
+                relativePath, // _path
+                chunk,        // _content
+                contentType,  // _contentType
+                i / chunkSize, // _chunkIndex
+                0             // _redirectCode, assuming 0 since writing to contract
+              );
               await tx.wait();
               transactionHash = tx.hash;
               contentChanged = true;
               console.log(`Chunk ${Math.floor(i / chunkSize) + 1} of ${Math.ceil(content.length / chunkSize)} updated for ${relativePath}`);
             } else {
-              console.log(`Chunk ${Math.floor(i / chunkSize) + 1} of ${Math.ceil(content.length / chunkSize)} unchanged for ${relativePath}`);
+              console.log(`Chunks are identical.`);
             }
           }
 

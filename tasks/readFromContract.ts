@@ -15,7 +15,8 @@ task("read-from-contract", "Read files from the smart contract")
     try {
       console.log("Contract address:", websiteContract.target);
       
-      const totalChunks = await websiteContract.getTotalChunks(fileName);
+      const resourceInfo = await websiteContract.getResource(fileName);
+      const totalChunks = resourceInfo[0];
       console.log(`Total chunks for ${fileName}: ${totalChunks}`);
 
       if (Number(totalChunks) === 0) {
@@ -27,13 +28,18 @@ task("read-from-contract", "Read files from the smart contract")
       let contentType = "";
 
       for (let i = 0; i < Number(totalChunks); i++) {
-        const [chunkContent, chunkContentType] = await websiteContract.getResourceChunk(fileName, i);
+        const response = await websiteContract.getResourceChunk(fileName, i);
+        const chunkContent = response[0];
+        const chunkContentType = response[1];
         fullContent += chunkContent;
         if (i === 0) contentType = chunkContentType; // Assume all chunks have the same content type
       }
 
+      // Convert hex string to readable text
+      const decodedContent = Buffer.from(fullContent.slice(2), 'hex').toString('utf8');
+
+      console.log(decodedContent);
       console.log(`File ${fileName} content:`);
-      console.log(fullContent);
       console.log(`Content Type: ${contentType}`);
 
     } catch (error: any) {
