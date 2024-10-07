@@ -145,6 +145,8 @@ node_modules
 /coverage
 /coverage.json
 
+/working-files
+
 # working files
 /contracts/working-files
 

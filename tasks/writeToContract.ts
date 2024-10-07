@@ -5,12 +5,15 @@ import { WebsiteContract } from "../typechain-types";
 
 task("write-to-contract", "Write files to the smart contract")
   .addOptionalPositionalParam("filePath", "Relative path of the file to upload (from build folder)", "", types.string)
-  .setAction(async ({ filePath }, hre) => {
+  .addOptionalPositionalParam("key", "Key to write the file to in the contract", "", types.string)
+  .setAction(async ({ filePath, key }, hre) => {
     const config = require('../webcontract.config').default;
     const buildFolder = path.resolve(config.buildFolder);
     const deployFolder = path.join(__dirname, '..', 'deploy');
     const manifestPath = path.join(deployFolder, 'manifest.json');
     const ethers = hre.ethers;
+
+    key = key || filePath;
 
     let manifest: { ipfsFiles: Record<string, string>, contractFiles: Record<string, string> };
 
@@ -30,9 +33,10 @@ task("write-to-contract", "Write files to the smart contract")
     const packageJson = require('../package.json');
     const websiteContract = WebsiteContract.attach(packageJson.contract) as WebsiteContract;
 
-    async function processFile(filePath: string) {
+    async function processFile(filePath: string, key: string) {
       const relativePath = path.relative(buildFolder, filePath);
       const fileExtension = path.extname(filePath).toLowerCase();
+      const targetKey = key || relativePath; // Use the provided key or default to relativePath
 
       if (!manifest.ipfsFiles[relativePath]) {
         console.log(`Processing ${relativePath}...`);
@@ -87,7 +91,7 @@ task("write-to-contract", "Write files to the smart contract")
             console.log(`Read chunk: ${i / chunkSize} @ ${relativePath}`);
             let existingChunk: [Buffer, string] = [Buffer.alloc(0), ''];
             try {
-              const [existingContent, existingContentType] = await websiteContract.getResourceChunk(relativePath, i / chunkSize);
+              const [existingContent, existingContentType] = await websiteContract.getResourceChunk(targetKey, i / chunkSize);
               existingChunk = [Buffer.from(existingContent), existingContentType];
             } catch (error) {
               console.log(`Chunk ${Math.floor(i / chunkSize) + 1} doesn't exist yet. Creating new chunk.`);
@@ -105,9 +109,9 @@ task("write-to-contract", "Write files to the smart contract")
               // console.log(`Content matches: ${newChunkHex === existingChunkUtf8}`)
 
               const tx = await websiteContract.setResourceChunk(
-                relativePath, // _path
-                chunk,        // _content
-                contentType,  // _contentType
+                targetKey,   // Use targetKey instead of relativePath
+                chunk,       // _content
+                contentType, // _contentType
                 i / chunkSize, // _chunkIndex
                 0             // _redirectCode, assuming 0 since writing to contract
               );
@@ -142,16 +146,16 @@ task("write-to-contract", "Write files to the smart contract")
         if (entry.isDirectory()) {
           await processDirectory(fullPath);
         } else {
-          await processFile(fullPath);
+          await processFile(fullPath, key);
         }
       }
     }
 
-    async function processSpecificFile(specificPath: string) {
+    async function processSpecificFile(specificPath: string, key: string) {
       const fullPath = path.join(buildFolder, specificPath);
       try {
         await fs.access(fullPath);
-        await processFile(fullPath);
+        await processFile(fullPath, key);
       } catch (error) {
         console.error(`Error: File not found - ${fullPath}`);
       }
@@ -180,7 +184,7 @@ task("write-to-contract", "Write files to the smart contract")
 
     try {
       if (filePath) {
-        await processSpecificFile(filePath);
+        await processSpecificFile(filePath, key);
       } else {
         await processDirectory(buildFolder);
       }

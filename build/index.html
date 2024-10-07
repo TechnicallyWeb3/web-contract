@@ -3,25 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Web4</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Web4 Profile</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <h1>Welcome to Web4</h1>
-    </header>
-    <main>
-        <h2>What is WTTP?</h2>
-        <p>The Web3 Transfer Transfer Protocol (WTTP) is a revolutionary protocol designed to facilitate seamless linking and redirecting to resources across various blockchains and decentralized storage systems. It introduces custom MIME types and redirect mechanisms, making content retrieval and management in Web3 environments more efficient and user-friendly.</p>
 
-        <h2>How Does the Browser Work?</h2>
-        <p>The browser is designed to interpret WTTP types, allowing it to handle contract-wide redirects and resource-specific links. It checks the contract's redirect information and follows it according to the specified type and code, ensuring a smooth user experience when navigating decentralized resources.</p>
+<div class="container">
+    <div class="profile">
+        <img id="profileImage" src="" alt="Profile Picture">
+        <h1 id="profileName"></h1>
+        <p class="bio" id="profileBio"></p>
+    </div>
 
-        <h2>What is a WebContract?</h2>
-        <p>The WebContract is a smart contract that manages web resources, admin roles, and various token operations. It allows for the storage, management, and transfer of files and tokens, including Ether, ERC20, and ERC721 tokens. The WebContract supports ERC4804 URL standards, ensuring interoperability with other decentralized applications.</p>
+    <div class="socials" id="socialLinks"></div>
 
-        <h2>Why Web4?</h2>
-        <p>Web4 represents the next evolution of the internet, where decentralized technologies empower users with more control over their data and interactions. By leveraging WTTP and WebContracts, Web4 aims to create a more open, secure, and user-centric web experience.</p>
-    </main>
+    <div id="addresses"></div>
+
+    <div id="sections"></div>
+</div>
+<footer>
+    <p>Created by <a href="https://tw3.dev" target="_blank">Technically Web3</a></p>
+</footer>
+
+<script src="script.js"></script>
 </body>
 </html>
