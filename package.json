@@ -1,6 +1,6 @@
 {
   "name": "web-contract",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "solidity front end contract",
   "main": "index.js",
   "scripts": {
