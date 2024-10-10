@@ -4,8 +4,8 @@ import path from 'path';
 import { WebsiteContract } from "../typechain-types";
 
 task("write-to-contract", "Write files to the smart contract")
-  .addOptionalPositionalParam("filePath", "Relative path of the file to upload (from build folder)", "", types.string)
-  .addOptionalPositionalParam("key", "Key to write the file to in the contract", "", types.string)
+  .addOptionalParam("filePath", "Relative path of the file to upload (from build folder)", "", types.string)
+  .addOptionalParam("key", "Key to write the file to in the contract", "", types.string)
   .setAction(async ({ filePath, key }, hre) => {
     const config = require('../webcontract.config').default;
     const buildFolder = path.resolve(config.buildFolder);
@@ -86,15 +86,16 @@ task("write-to-contract", "Write files to the smart contract")
           console.log(`Number of chunks: ${Math.ceil(content.length / chunkSize)}`);
 
           for (let i = 0; i < content.length; i += chunkSize) {
-            console.log(`Processing chunk ${Math.floor(i / chunkSize) + 1}`);
+            let _chunkIndex = Math.floor(i / chunkSize);
+            console.log(`Processing chunk ${_chunkIndex}`);
             const chunk = content.subarray(i, i + chunkSize);
-            console.log(`Read chunk: ${i / chunkSize} @ ${relativePath}`);
+            console.log(`Read chunk: ${_chunkIndex} @ ${relativePath}`);
             let existingChunk: [Buffer, string] = [Buffer.alloc(0), ''];
             try {
-              const [existingContent, existingContentType] = await websiteContract.getResourceChunk(targetKey, i / chunkSize);
+              const [existingContent, existingContentType] = await websiteContract.getResourceChunk(targetKey, _chunkIndex);
               existingChunk = [Buffer.from(existingContent), existingContentType];
             } catch (error) {
-              console.log(`Chunk ${Math.floor(i / chunkSize) + 1} doesn't exist yet. Creating new chunk.`);
+              console.log(`Chunk ${_chunkIndex} doesn't exist yet. Creating new chunk.`);
             }
             console.log(`Existing chunk length: ${existingChunk[0].length}`);
             console.log(`New chunk length: ${chunk.length}`);
@@ -107,18 +108,19 @@ task("write-to-contract", "Write files to the smart contract")
               // console.log(`New chunk (hex): ${newChunkHex.slice(0, 50)}...`);
               // console.log(`Existing chunk (utf8): ${existingChunkUtf8.slice(0, 50)}...`);
               // console.log(`Content matches: ${newChunkHex === existingChunkUtf8}`)
+              console.log('target key is: ', targetKey);
 
               const tx = await websiteContract.setResourceChunk(
                 targetKey,   // Use targetKey instead of relativePath
                 chunk,       // _content
                 contentType, // _contentType
-                i / chunkSize, // _chunkIndex
+                _chunkIndex, // _chunkIndex
                 0             // _redirectCode, assuming 0 since writing to contract
               );
               await tx.wait();
               transactionHash = tx.hash;
               contentChanged = true;
-              console.log(`Chunk ${Math.floor(i / chunkSize) + 1} of ${Math.ceil(content.length / chunkSize)} updated for ${relativePath}`);
+              console.log(`Chunk ${_chunkIndex} of ${Math.ceil(content.length / chunkSize)} updated for ${relativePath}`);
             } else {
               console.log(`Chunks are identical.`);
             }
@@ -157,7 +159,7 @@ task("write-to-contract", "Write files to the smart contract")
         await fs.access(fullPath);
         await processFile(fullPath, key);
       } catch (error) {
-        console.error(`Error: File not found - ${fullPath}`);
+        console.error(`Error: File not found - ${error}`);
       }
     }
 

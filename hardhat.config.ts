@@ -19,6 +19,16 @@ const config: HardhatUserConfig = {
       url: process.env.RPC_URL_137 || "",
       accounts: [process.env.PRIVATE_KEY || ""],
     }
+  },
+  etherscan: {
+    // Your API key for Etherscan
+    // Obtain one at https://etherscan.io/
+    apiKey: process.env.ETHERSCAN_API_KEY || "",
+  },
+  sourcify: {
+    // Disabled by default
+    // Doesn't need an API key
+    enabled: true
   }
 };
 

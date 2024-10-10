@@ -26,7 +26,9 @@
   "homepage": "https://github.com/TechnicallyWeb3/web-contract#readme",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "hardhat": "^2.22.10"
+    "@nomicfoundation/hardhat-verify": "^2.0.11",
+    "hardhat": "^2.22.10",
+    "typechain": "^8.3.2"
   },
   "dependencies": {
     "@ensdomains/ens-contracts": "^1.2.2",
@@ -36,5 +38,5 @@
     "dotenv": "^16.4.5",
     "ipfs-http-client": "^60.0.1"
   },
-  "contract": "0x238c9a45528ff059BCC9f50E65d45bc7FcD9c22E"
+  "contract": "0x2C6A5a2B655f2F3a83de633E7D7AE8435946cc7f"
 }
