@@ -81,50 +81,55 @@ task("write-to-contract", "Write files to the smart contract")
           console.log(`Chunk size: ${chunkSize} bytes`);
           let transactionHash: string = '';
           let contentChanged = false;
+          let _existingContent = '';
+          const contentHex = `0x${content.toString('hex')}`;
+          const numberOfChunks = Math.ceil(content.length / chunkSize);
+          //console.log(`Content (hex): ${contentHex}`);
+          console.log(`Number of chunks: ${numberOfChunks}`);
 
-          console.log(`Total content length: ${content.length}`);
-          console.log(`Number of chunks: ${Math.ceil(content.length / chunkSize)}`);
+          try {
+            const [existingContent, existingContentType] = await websiteContract.getResource(targetKey);
+            _existingContent = existingContent;
+          } catch (error) {
+            console.log(`Content doesn't exist yet. Creating new chunk.`);
+          }
+          console.log(`Comparing new chunk with existing chunk...`);
+          if (_existingContent !== contentHex) {
 
-          for (let i = 0; i < content.length; i += chunkSize) {
-            let _chunkIndex = Math.floor(i / chunkSize);
-            console.log(`Processing chunk ${_chunkIndex}`);
-            const chunk = content.subarray(i, i + chunkSize);
-            console.log(`Read chunk: ${_chunkIndex} @ ${relativePath}`);
-            let existingChunk: [Buffer, string] = [Buffer.alloc(0), ''];
-            try {
-              const [existingContent, existingContentType] = await websiteContract.getResourceChunk(targetKey, _chunkIndex);
-              existingChunk = [Buffer.from(existingContent), existingContentType];
-            } catch (error) {
-              console.log(`Chunk ${_chunkIndex} doesn't exist yet. Creating new chunk.`);
-            }
-            console.log(`Existing chunk length: ${existingChunk[0].length}`);
-            console.log(`New chunk length: ${chunk.length}`);
+            for (let i = 0; i < numberOfChunks; i++) {
+              const feeData = await hre.ethers.provider.getFeeData();
+              const replace = (i === 0) ? true : false;
 
-            console.log(`Comparing new chunk with existing chunk...`);
-            const newChunkHex = `0x${chunk.toString('hex')}`;
-            const existingChunkUtf8 = existingChunk[0].toString('utf8');
-            if (newChunkHex !== existingChunkUtf8) {
-              console.log(`Chunks are different. Logging first 50 bytes of each:`);
-              // console.log(`New chunk (hex): ${newChunkHex.slice(0, 50)}...`);
-              // console.log(`Existing chunk (utf8): ${existingChunkUtf8.slice(0, 50)}...`);
-              // console.log(`Content matches: ${newChunkHex === existingChunkUtf8}`)
-              console.log('target key is: ', targetKey);
+              console.log('replace is: ', replace);
 
-              const tx = await websiteContract.setResourceChunk(
+              const writtenBytes = i * chunkSize;
+
+              const chunk = content.subarray(writtenBytes, writtenBytes + chunkSize);
+              console.log(`Processing chunk index: ${i} @ ${relativePath}`);
+              //console.log(`Chunk content: ${chunk}`);
+              console.log(`New chunk length: ${chunk.length}`);
+
+              const newChunkHex = `0x${chunk.toString('hex')}`;
+
+              //console.log(`Logging first 50 bytes of each chunk: ${newChunkHex.slice(0, 50)}...`);
+
+              const tx = await websiteContract.setResource(
                 targetKey,   // Use targetKey instead of relativePath
-                chunk,       // _content
+                newChunkHex, // _content
                 contentType, // _contentType
-                _chunkIndex, // _chunkIndex
-                0             // _redirectCode, assuming 0 since writing to contract
+                replace,     // _replace
+                0,  
+                {gasPrice:feeData.gasPrice}          // _redirectCode, assuming 0 since writing to contract
               );
               await tx.wait();
               transactionHash = tx.hash;
               contentChanged = true;
-              console.log(`Chunk ${_chunkIndex} of ${Math.ceil(content.length / chunkSize)} updated for ${relativePath}`);
-            } else {
-              console.log(`Chunks are identical.`);
+              console.log(`Chunk index ${i} of ${numberOfChunks} updated for ${relativePath}`);
             }
+          } else {
+            console.log(`Chunks are identical.`);
           }
+          
 
           return { transactionHash, contentChanged };
         }

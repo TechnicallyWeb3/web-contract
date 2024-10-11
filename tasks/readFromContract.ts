@@ -14,33 +14,24 @@ task("read-from-contract", "Read files from the smart contract")
 
     try {
       console.log("Contract address:", websiteContract.target);
-      
+      let decodedContent = '';
       const resourceInfo = await websiteContract.getResource(fileName);
-      const totalChunks = resourceInfo[0];
-      console.log(`Total chunks for ${fileName}: ${totalChunks}`);
+      const content = resourceInfo[0];
+      const contentType = resourceInfo[1];
+      //console.log(`content: ${content}`);
 
-      if (Number(totalChunks) === 0) {
-        console.log(`File ${fileName} is empty or does not exist.`);
+      // Check if the content is empty
+      if (content.length === 0) {
+        console.log("No content found for this file.");
         return;
+      } else {
+        // console.log('content.slice(2):', remove0x);
+        decodedContent = Buffer.from(content.substring(2), 'hex').toString('utf8');
+        console.log(`decodedContent: ${decodedContent}`);
+        console.log(`Content Type: ${contentType}`);
+
       }
-
-      let fullContent = "";
-      let contentType = "";
-
-      for (let i = 0; i < Number(totalChunks); i++) {
-        const response = await websiteContract.getResourceChunk(fileName, i);
-        const chunkContent = response[0];
-        const chunkContentType = response[1];
-        fullContent += chunkContent;
-        if (i === 0) contentType = chunkContentType; // Assume all chunks have the same content type
-      }
-
-      // Convert hex string to readable text
-      const decodedContent = Buffer.from(fullContent.slice(2), 'hex').toString('utf8');
-
-      console.log(decodedContent);
-      console.log(`File ${fileName} content:`);
-      console.log(`Content Type: ${contentType}`);
+      
 
     } catch (error: any) {
       console.error("Error reading file:", error.message);

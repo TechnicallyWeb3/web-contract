@@ -145,7 +145,7 @@ abstract contract WebContract is TokenManager {
 
     /// @notice Represents a resource file with content chunks and content type
     struct ResourceFile {
-        bytes[] content;
+        bytes content;
         string contentType;
         uint8 redirectCode;
     }
@@ -156,66 +156,43 @@ abstract contract WebContract is TokenManager {
     /// @param _path Path of the resource
     /// @param _content Content of the chunk
     /// @param _contentType Content type of the resource
-    /// @param _chunkIndex Index of the chunk
-    /// @dev Can only be called by an admin when the contract is not locked
-    function setResourceChunk(
+    /// @param _replace Replace or concat the resource
+    function setResource(
         string calldata _path,
         bytes calldata _content,
         string calldata _contentType,
-        uint256 _chunkIndex,
+        bool _replace,
         uint8 _redirectCode
     ) public virtual onlyAdmin notLocked {
         ResourceFile storage file = resourceFiles[_path];
-        bytes[] storage chunks = file.content;
 
         require(bytes(_contentType).length > 0, "Content type is required");
 
-        if (bytes(file.contentType).length == 0) {
-            // If the contentType is not set, this is a new file
+        if (
+            keccak256(abi.encode(_contentType)) !=
+            keccak256(abi.encode(file.contentType))
+        ) {
             file.contentType = _contentType;
-            chunks.push(_content);
-            file.redirectCode = _redirectCode;
-        } else {
-            require(
-                keccak256(abi.encodePacked(file.contentType)) == keccak256(abi.encodePacked(_contentType)),
-                "Content type mismatch"
-            );
-
-            require(_chunkIndex <= chunks.length, "Chunk index out of bounds");
-
-            if (keccak256(_content) != keccak256(chunks[_chunkIndex])) {
-                chunks[_chunkIndex] = _content;
-            }
-
-            if (_redirectCode != file.redirectCode) {
-                file.redirectCode = _redirectCode;
-            }
         }
-
-        emit ResourceChunkSet(_path, _chunkIndex);
+        if (_redirectCode != file.redirectCode) {
+            file.redirectCode = _redirectCode;
+        }
+        if (_replace) {
+            // If the contentType is not set, this is a new file
+            file.content = _content;
+        } else {
+            file.content = abi.encodePacked(file.content, _content);
+        }
     }
 
     /// @notice Retrieves a chunk of a resource file
     /// @param path Path of the resource
-    /// @param index Index of the chunk
     /// @return bytes memory, string memory The content chunk and content type
-    function getResourceChunk(
-        string memory path,
-        uint256 index
-    ) public view virtual returns (bytes memory, string memory) {
-        ResourceFile memory file = resourceFiles[path];
-        require(index < file.content.length, "Chunk index out of bounds");
-        return (file.content[index], file.contentType);
-    }
-
     function getResource(
         string memory path
-    ) public view virtual returns (uint256, string memory, uint8) {
-        return (
-            resourceFiles[path].content.length, 
-            resourceFiles[path].contentType, 
-            resourceFiles[path].redirectCode
-        );
+    ) public view virtual returns (bytes memory, string memory) {
+        ResourceFile memory file = resourceFiles[path];
+        return (file.content, file.contentType);
     }
 
     /// @notice Removes a resource
@@ -228,9 +205,12 @@ abstract contract WebContract is TokenManager {
         emit ResourceRemoved(path);
     }
 
-
     /// @dev Emitted when the redirect information is set
-    event RedirectSet(string redirectValue, string redirectType, uint8 redirectCode);
+    event RedirectSet(
+        string redirectValue,
+        string redirectType,
+        uint8 redirectCode
+    );
 
     /// @dev Emitted when the contract is locked
     event ContractLocked();
@@ -252,5 +232,4 @@ abstract contract WebContract is TokenManager {
 
     /// @dev Emitted when a resource is removed
     event ResourceRemoved(string path);
-
 }
