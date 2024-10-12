@@ -1,15 +1,12 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import hre from "hardhat";
-import { WebsiteContract } from "../typechain-types";
+import { WebContract } from "../typechain-types";
 
 describe("WebsiteContract", function () {
-  let websiteContract: WebsiteContract;
-  let owner: any;
-  let otherAccount: any;
+  let websiteContract;
 
   beforeEach(async function () {
-    [owner, otherAccount] = await ethers.getSigners();
     const WebsiteContractFactory = await ethers.getContractFactory("WebsiteContract");
     websiteContract = await WebsiteContractFactory.deploy();
     await websiteContract.waitForDeployment();
@@ -23,18 +20,20 @@ describe("WebsiteContract", function () {
       console.log("Starting 'set and retrieve' test");
       const path = "/index.html";
       const contentType = "text/html";
-      const content = "<html><body>Hello, Web3!</body></html>";
+      const content = ethers.toUtf8Bytes("<html><body>Hello, Web3!</body></html>");
+      const chunkIndex = 0;
+      const redirectCode = 0;
 
       let tx;
       const feeData = await hre.ethers.provider.getFeeData();
 
       console.log("Setting resource chunk...");
-      tx = await websiteContract.setResourceChunk(path, content, contentType, {gasPrice:feeData.gasPrice});
+      tx = await websiteContract.setResourceChunk(path, content, contentType, chunkIndex, redirectCode, {gasPrice:feeData.gasPrice});
       await tx.wait();
       console.log("Resource chunk set successfully");
 
-      console.log("Getting total chunks...");
-      const totalChunks = await websiteContract.getTotalChunks(path);
+      console.log("Getting resource info...");
+      const [totalChunks, retrievedContentType, retrievedRedirectCode] = await websiteContract.getResource(path);
       console.log("Total chunks:", totalChunks.toString());
 
       if (Number(totalChunks) > 0) {
@@ -43,12 +42,12 @@ describe("WebsiteContract", function () {
         console.log("Retrieved chunk:", {
           path,
           contentType: retrievedContentType,
-          content: retrievedContent
+          content: ethers.toUtf8String(retrievedContent)
         });
 
         console.log("Verifying retrieved content...");
         expect(retrievedContentType).to.equal(contentType);
-        expect(retrievedContent).to.equal(content);
+        expect(ethers.toUtf8String(retrievedContent)).to.equal(ethers.toUtf8String(content));
         console.log("Content verified successfully");
       } else {
         console.log("No chunks found for the given path");
@@ -60,24 +59,25 @@ describe("WebsiteContract", function () {
       console.log("Starting 'append content' test");
       const path = "/data.txt";
       const contentType = "text/plain";
-      const chunk1 = "First chunk. ";
-      const chunk2 = "Second chunk.";
+      const chunk1 = ethers.toUtf8Bytes("First chunk. ");
+      const chunk2 = ethers.toUtf8Bytes("Second chunk.");
+      const redirectCode = 0;
 
       let tx;
       const feeData = await hre.ethers.provider.getFeeData();
 
       console.log("Setting first chunk...");
-      tx = await websiteContract.setResourceChunk(path, chunk1, contentType, {gasPrice:feeData.gasPrice});
+      tx = await websiteContract.setResourceChunk(path, chunk1, contentType, 0, redirectCode, {gasPrice:feeData.gasPrice});
       await tx.wait();
       console.log("First chunk set successfully");
 
       console.log("Setting second chunk...");
-      tx = await websiteContract.setResourceChunk(path, chunk2, contentType, {gasPrice:feeData.gasPrice});
+      tx = await websiteContract.setResourceChunk(path, chunk2, contentType, 1, redirectCode, {gasPrice:feeData.gasPrice});
       await tx.wait();
       console.log("Second chunk set successfully");
 
-      console.log("Getting total chunks...");
-      const totalChunks = await websiteContract.getTotalChunks(path);
+      console.log("Getting resource info...");
+      const [totalChunks, retrievedContentType, retrievedRedirectCode] = await websiteContract.getResource(path);
       console.log("Total chunks:", totalChunks.toString());
       expect(totalChunks).to.equal(2);
 
@@ -87,13 +87,13 @@ describe("WebsiteContract", function () {
 
       console.log("Retrieved chunks:", {
         path,
-        chunk1: retrievedContent1,
-        chunk2: retrievedContent2
+        chunk1: ethers.toUtf8String(retrievedContent1),
+        chunk2: ethers.toUtf8String(retrievedContent2)
       });
 
       console.log("Verifying retrieved content...");
-      expect(retrievedContent1).to.equal(chunk1);
-      expect(retrievedContent2).to.equal(chunk2);
+      expect(ethers.toUtf8String(retrievedContent1)).to.equal(ethers.toUtf8String(chunk1));
+      expect(ethers.toUtf8String(retrievedContent2)).to.equal(ethers.toUtf8String(chunk2));
       console.log("Content verified successfully");
     });
 
@@ -101,7 +101,9 @@ describe("WebsiteContract", function () {
       console.log("Starting 'owner-only set' test");
       const path = "/secure.txt";
       const contentType = "text/plain";
-      const content = "Sensitive data";
+      const content = ethers.toUtf8Bytes("Sensitive data");
+      const chunkIndex = 0;
+      const redirectCode = 0;
 
       let tx;
 
@@ -109,7 +111,7 @@ describe("WebsiteContract", function () {
       const gasPrice = feeData.gasPrice ? feeData.gasPrice + (feeData.gasPrice / BigInt(10)) : 30000000;
 
       console.log("Setting resource chunk as owner...");
-      tx = await websiteContract.setResourceChunk(path, content, contentType, {gasPrice:gasPrice});
+      tx = await websiteContract.setResourceChunk(path, content, contentType, chunkIndex, redirectCode, {gasPrice:gasPrice});
       await tx.wait();
       console.log("Resource chunk set successfully");
 
@@ -133,21 +135,21 @@ describe("WebsiteContract", function () {
       for (let i = 0; i < totalSize; i += chunkSize) {
         const feeData = await hre.ethers.provider.getFeeData();
         const gasPrice = feeData.gasPrice ? feeData.gasPrice + (feeData.gasPrice / BigInt(10)) : 30000000;
-        const chunkContent = 'x'.repeat(Math.min(chunkSize, totalSize - i));
-        tx = await websiteContract.setResourceChunk(path, chunkContent, contentType, {gasPrice:gasPrice});
+        const chunkContent = ethers.toUtf8Bytes('x'.repeat(Math.min(chunkSize, totalSize - i)));
+        tx = await websiteContract.setResourceChunk(path, chunkContent, contentType, Math.floor(i / chunkSize), 0, {gasPrice:gasPrice});
         await tx.wait();
         console.log(`Chunk ${Math.floor(i / chunkSize) + 1} set (${i + chunkContent.length} / ${totalSize} bytes)`);
       }
 
-      console.log("Getting total chunks...");
-      const totalChunks = await websiteContract.getTotalChunks(path);
+      console.log("Getting resource info...");
+      const [totalChunks, retrievedContentType, retrievedRedirectCode] = await websiteContract.getResource(path);
       console.log("Total chunks for large file:", totalChunks.toString());
 
       console.log("Retrieving and verifying chunks...");
       let retrievedContent = '';
       for (let i = 0; i < totalChunks; i++) {
         const [content] = await websiteContract.getResourceChunk(path, i);
-        retrievedContent += content;
+        retrievedContent += ethers.toUtf8String(content);
         console.log(`Chunk ${i + 1} retrieved (${retrievedContent.length} / ${totalSize} bytes)`);
       }
 
@@ -174,9 +176,9 @@ describe("WebsiteContract", function () {
       const gasPrice = feeData.gasPrice ? feeData.gasPrice + (feeData.gasPrice / BigInt(10)) : 30000000;
 
       console.log("Setting resource chunk...");
-      await websiteContract.setResourceChunk(path, content, contentType, {gasPrice:gasPrice});
-      console.log("Getting total chunks...");
-      let totalChunks = await websiteContract.getTotalChunks(path);
+      await websiteContract.setResourceChunk(path, ethers.toUtf8Bytes(content), contentType, 0, 0, {gasPrice:gasPrice});
+      console.log("Getting resource info...");
+      let [totalChunks, retrievedContentType, retrievedRedirectCode] = await websiteContract.getResource(path);
       console.log("Total chunks before removal:", totalChunks.toString());
       expect(totalChunks).to.equal(1);
 
@@ -186,14 +188,14 @@ describe("WebsiteContract", function () {
       console.log("Resource removed");
 
       console.log("Getting total chunks after removal...");
-      totalChunks = await websiteContract.getTotalChunks(path);
+      [totalChunks, , ] = await websiteContract.getResource(path);
       console.log("Total chunks after removal:", totalChunks.toString());
       expect(totalChunks).to.equal(0);
 
       console.log("Attempting to retrieve removed chunk...");
       await expect(
         websiteContract.getResourceChunk(path, 0)
-      ).to.be.revertedWith("Chunk does not exist");
+      ).to.be.revertedWith("Chunk index out of bounds");
       console.log("Chunk retrieval properly reverted");
     });
   });
